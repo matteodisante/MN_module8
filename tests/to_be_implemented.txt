@@ -1,0 +1,64 @@
+
+TEST PER compute_mutual_informatioN (NO CHECK VALORE CORRETTO DI MI)
+# Define a simple dataset with clear separations
+	dataset = np.array([
+		[1.0, 2.0, 3.0],
+		[2.0, 3.0, 4.0],
+		[3.0, 4.0, 5.0],
+		[5.0, 6.0, 7.0],
+		[1.5, 2.5, 3.5]
+		])
+		
+	# Number of nearest neighbors
+	k = 2
+	
+
+	
+	# Print the dataset for clarity
+	print("Dataset:")
+	print(dataset)
+	
+		
+	# Compute mutual information and marginal counts
+	mi, marginal_counts, epsilon = compute_mutual_information(dataset, k)
+	
+	#print epsilon/2
+	print('\nepsilosn/2 computed')
+	print(epsilon/2)
+	
+	# Print marginal counts from Step 2
+	print("\nMarginal Counts (Step 2):")
+	print(marginal_counts)
+	
+	# Print mutual information
+	print("\nMutual Information (Grassberger):", mi)
+	
+
+
+
+	# Verifica con valori attesi
+	print("\nExpected Counts (manual check):")
+	expected_counts = np.array([
+		[1, 1, 1, 1, 0],  # For first variable
+		[1, 1, 1, 1, 0],  # For second variable
+		[1, 1, 1, 1, 0]   # For third variable
+		])
+	print(expected_counts)
+	
+	print("\nComparison (Calculated == Expected):")
+	print(np.allclose(marginal_counts, expected_counts))
+
+
+
+
+	TEST PER c add_noise (sia per vedere che punti con coordinate uguali vengono mandati in punti con tutte coordinate diverse, sia per vedere che la differenza tra due punti che erano uguali e ora sono diversi è diversa da 0)
+
+	np.set_printoptions(precision=20, suppress=True)
+	a = np.array(([1.,2.,3.], [4.,2.,6.], [1., 2., 3.]))
+	print(a)
+	a_noisy = add_noise(a,  magnitude = 1e-14, seed = None)
+	print(a_noisy)
+	a_flat = a_noisy.flatten()
+	diff_matrix = np.abs(a_flat[:, None] - a_flat)
+	print(diff_matrix)
+	print(np.__version__)
