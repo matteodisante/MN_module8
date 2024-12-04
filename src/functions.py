@@ -3,6 +3,17 @@ import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
 from scipy.special import digamma
 
+def add_noise(matrix,  magnitude = 1e-14, seed = None):
+	# Crea un generatore di numeri casuali
+	rng = np.random.default_rng(seed = seed)
+	
+	# Genera un array di rumore uniforme
+	noise_matrix = rng.uniform(low=1*magnitude, high=5*magnitude, size=matrix.shape)
+	
+	noisy_matrix = matrix + noise_matrix
+	return noisy_matrix
+
+
 
 def find_k_nearest_neighbors(matrix, k):
     """
@@ -22,7 +33,7 @@ def find_k_nearest_neighbors(matrix, k):
     return indices[:, 1:], distances[:, 1:]  # Remove self-neighbor
 
 
-def compute_mutual_information(dataset, k):
+def mutual_information_1(dataset, k):
 
 	"""
 	Computes the mutual information among multiple 1D variables based on Grassberger's method.
@@ -62,39 +73,72 @@ def compute_mutual_information(dataset, k):
 		print(f"\nMarginal Counts for Variable {var_idx + 1}:\n", marginal_counts[var_idx])
 
 		
-	# Step 3: Compute the mutual information using Grassberger's formula
+    # Step 3: Compute the mutual information using Grassberger's formula
 	mi = (
 	digamma(k)
-	- 1 / k
 	+ (n_variables - 1) * digamma(n_samples)
 	- np.mean(np.sum(digamma(marginal_counts + 1), axis=0))
 	)
-	return mi, marginal_counts, epsilon
 
-
-def debug_k_nearest_neighbors(dataset, k):
-	from sklearn.metrics import pairwise_distances
-
-	# Calcolo delle distanze pairwise con la metrica Chebyshev
-	distances_joint = pairwise_distances(dataset, metric='chebyshev')
-	print("Pairwise distances (joint space, Chebyshev):\n", distances_joint)
 	
-	# Calcolo delle distanze del k-esimo vicino
-	epsilon = []
-	for i in range(len(dataset)):
-		sorted_distances = np.sort(distances_joint[i])
-		print(f"Point {i}: sorted distances = {sorted_distances}")
-		kth_neighbor_distance = sorted_distances[k]  # k-th neighbor distance
-		print(f"Point {i}: k-th neighbor distance = {kth_neighbor_distance}")
-		epsilon.append(2 * kth_neighbor_distance)
+	return mi
+
+
+
+
+def mutual_information_1_wrong(dataset, k):
+
+	"""
+	Computes the mutual information among multiple 1D variables based on Grassberger's method.
 	
-	print("\nEpsilon values (joint space):", epsilon)
-	return np.array(epsilon)
+	Parameters:
+	    dataset (2D array-like): Data matrix where each row is a sample and each column is a variable.
+	    k (int): Number of nearest neighbors to consider for the estimation.
+	
+    Returns:
+        float: The estimated mutual information.
+    """
+	dataset = np.asarray(dataset)
+	n_samples, n_variables = dataset.shape
+	
+	# Step 1: Given k find the distance from each point to its k-NN in the joint space
+	index_s_joint, distances_joint = find_k_nearest_neighbors(dataset, k)
+	epsilon_joint = 2 * distances_joint[:, k-1]  # 2*Distance in the joint space to the k-th nearest neighbor for each point
+	print("Epsilon/2 values (joint space):", epsilon_joint/2)
+	
+	
+	epsilon_marginal_v = np.zeros(dataset.shape)
+	entropy_marginal_means = np.zeros(n_variables)
+	
+	for var_idx in range(n_variables):
+		# Extract the current variable as a 1D array
+		marginal_data = dataset[:, var_idx]
+		_, distances_marginal = find_k_nearest_neighbors(marginal_data.reshape(-1, 1), k)
+		print(f"\nDistances Marginal for Variable {var_idx + 1}:\n", distances_marginal)
+		epsilon_marginal_v[:, var_idx] = 2 * distances_marginal[:, k-1]
+		entropy_marginal_means[var_idx] = np.mean(np.log(epsilon_marginal_v[:, var_idx]))
+	
+	print(f"\n epsilon_marginal:\n", epsilon_marginal_v)
+	
+	mi = ( 
+	(n_variables - 1) * (digamma(n_samples) - digamma(k)) 
+	+ np.sum(entropy_marginal_means) 
+	- n_variables*np.mean(np.log(epsilon_joint)) 
+	)	
+	
+	return mi
 
 
 
-if __name__ == "__main__":
-	# Define a simple dataset with clear separations
+
+
+
+
+
+if __name__ == '__main__':
+# Define a simple dataset with clear separations
+	np.set_printoptions(precision=20, suppress=True)
+
 	dataset = np.array([
 		[1.0, 2.0, 3.0],
 		[2.0, 3.0, 4.0],
@@ -102,49 +146,31 @@ if __name__ == "__main__":
 		[5.0, 6.0, 7.0],
 		[1.5, 2.5, 3.5]
 		])
+	
+	dataset = dataset*1.34564238e6
+		
+	#dataset = add_noise(dataset)
 		
 	# Number of nearest neighbors
 	k = 2
-	
-	
-	
 	
 	# Print the dataset for clarity
 	print("Dataset:")
 	print(dataset)
 	
-	# Print epsilon/2 expected values:	
-	debug_k_nearest_neighbors(dataset, k)
-	
-	
-	# Compute mutual information and marginal counts
-	mi, marginal_counts, epsilon = compute_mutual_information(dataset, k)
-	
-	#print epsilon/2
-	print('\nepsilosn/2 computed')
-	print(epsilon/2)
-	
-	# Print marginal counts from Step 2
-	print("\nMarginal Counts (Step 2):")
-	print(marginal_counts)
-	
+	#
+	mi_right = mutual_information_1(dataset, k)
 	# Print mutual information
-	print("\nMutual Information (Grassberger):", mi)
+	print("\nMutual Information right (Grassberger):", mi_right)	
+	# Compute wrong mutual information 
+	mi_wrong = mutual_information_1_wrong(dataset, k)
+	# Print mutual information
+	print("\nMutual Information wrong (Grassberger):", mi_wrong)
 	
 
 
 
-	# Verifica con valori attesi
-	print("\nExpected Counts (manual check):")
-	expected_counts = np.array([
-		[1, 1, 1, 2, 2],  # For first variable
-		[1, 1, 2, 2, 2],  # For second variable
-		[1, 1, 3, 2, 2]   # For third variable
-		])
-	print(expected_counts)
-	
-	print("\nComparison (Calculated == Expected):")
-	print(np.allclose(marginal_counts, expected_counts))
+
 
 
 
