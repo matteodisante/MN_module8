@@ -129,7 +129,84 @@ def mutual_information_1_wrong(dataset, k):
 	return mi
 
 
+def data_generator(distribution, size, params, correlation=None, seed=None):
+    """
+    Generate data from a specified distribution, with optional correlation for univariate distributions.
 
+    Parameters:
+        distribution (str): The name of the distribution ('gaussian', 'exponential', 'gamma_exponential', 
+                            'weinman_exponential', 'circular', 'uniform').
+        size (int): The number of samples to generate.
+        params (dict): Dictionary of parameters for the specific distribution.
+        correlation (float, optional): Desired correlation coefficient for univariate distributions (-1 <= r <= 1).
+        seed (int, optional): Seed for reproducibility.
+
+    Returns:
+        np.ndarray: Generated data. For univariate distributions, returns a 2D array with two correlated series.
+                    For bivariate distributions, returns a 2D array with two dimensions.
+    """
+    rng = np.random.default_rng(seed)
+
+    # Handle univariate distributions
+    if distribution in ['gaussian', 'exponential', 'uniform']:
+        # Generate two independent series based on the specified distribution
+        if distribution == 'gaussian':
+            mu = params.get('mu', 0)
+            sigma = params.get('sigma', 1)
+            series_1 = rng.normal(mu, sigma, size)
+            series_2 = rng.normal(mu, sigma, size)
+        elif distribution == 'exponential':
+            lam = params.get('lambda', 1)
+            series_1 = rng.exponential(1 / lam, size)
+            series_2 = rng.exponential(1 / lam, size)
+        elif distribution == 'uniform':
+            low = params.get('low', 0)
+            high = params.get('high', 1)
+            series_1 = rng.uniform(low, high, size)
+            series_2 = rng.uniform(low, high, size)
+        
+        # Enforce correlation if specified
+        if correlation is not None:
+            correlation_matrix = np.array([[1, correlation], [correlation, 1]])
+            cholesky_decomposition = np.linalg.cholesky(correlation_matrix)
+            independent_series = np.stack((series_1, series_2), axis=0)
+            correlated_series = np.dot(cholesky_decomposition, independent_series)
+            return correlated_series.T  # Return as (size, 2)
+
+        return np.column_stack((series_1, series_2))  # Return as independent series
+
+    # Handle bivariate Gamma-Exponential distribution
+    elif distribution == 'gamma_exponential':
+        alpha = params.get('alpha', 1)
+        beta = params.get('beta', 1)
+        x = rng.gamma(alpha, 1 / beta, size)
+        y = rng.exponential(1 / beta, size)
+        return np.column_stack((x, y))
+
+    # Handle bivariate Ordered Weinman Exponential distribution
+    elif distribution == 'weinman_exponential':
+        mu = params.get('mu', 1)
+        x = rng.exponential(mu, size)
+        y = rng.exponential(mu, size)
+        x, y = np.sort(x), np.sort(y)  # Ensure ordering
+        return np.column_stack((x, y))
+
+    # Handle circular distribution
+    elif distribution == 'circular':
+    	l = params.get('l', 1)
+    	m = params.get('m', 1)
+    	r = params.get('r', 1)
+    	radius = rng.triangular(l, m, r, size)
+    	angles = rng.uniform(0, 2 * np.pi, size)
+    	x = radius * np.cos(angles)
+    	y = radius * np.sin(angles)
+    	return np.column_stack((x, y))
+
+    # Raise an error for unsupported distributions
+    else:
+        raise ValueError(f"Unsupported distribution: {distribution}")
+
+	
 
 
 
