@@ -1,6 +1,9 @@
 # macOS System Files
 .DS_Store
 
+# Data files
+*.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
