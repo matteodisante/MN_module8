@@ -1,15 +1,18 @@
 import sys
 import os
 import numpy as np
+import shutil
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
 from functions import  data_generator
 
 
+
+
 def ensure_directory(dir_path):
     """
-    Ensure the target directory exists. If it exists, prompt the user
-    to decide whether to delete its contents or continue with a warning.
+    Ensure the target directory exists. If it exists, clear its contents 
+    (including files and subdirectories).
 
     Parameters:
         dir_path (str): Path to the directory.
@@ -20,11 +23,10 @@ def ensure_directory(dir_path):
     if os.path.exists(dir_path):
         response = input(f"The directory '{dir_path}' already exists. Do you want to delete it? (yes/no): ").strip().lower()
         if response == 'yes':
-            for file in os.listdir(dir_path):
-                file_path = os.path.join(dir_path, file)
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
-            print(f"Directory '{dir_path}' has been cleared.")
+            # Elimina completamente la directory e ricreala vuota
+            shutil.rmtree(dir_path)
+            os.makedirs(dir_path)
+            print(f"Directory '{dir_path}' has been cleared and recreated.")
         else:
             print(f"Files in '{dir_path}' may be overwritten if files with the same names are generated.")
             proceed = input("Do you want to continue? (yes/no): ").strip().lower()
@@ -35,7 +37,6 @@ def ensure_directory(dir_path):
         os.makedirs(dir_path)
         print(f"Directory '{dir_path}' has been created.")
     return True
-
 
 def save_data_to_txt(data, file_name, dir_path):
     """
@@ -59,16 +60,16 @@ if __name__ == "__main__":
     distributions_to_generate = [
         {
             'distribution': 'gaussian',
-            'size': 1000,
-            'num_files': 2,
+            'size': 20000,
+            'num_files': 10,
             'params': {'mu': 0, 'sigma': 1}
-        },
-        {
-            'distribution': 'circular',
-            'size': 1000,
-            'num_files': 3,
-            'params': {'l': 0, 'm': 4, 'r':7}
-        }
+        }#,
+#        {
+#            'distribution': 'circular',
+#            'size': 1000,
+#            'num_files': 3,
+#            'params': {'l': 0, 'm': 4, 'r':7}
+#        }
     ]
 
     # Base directory setup: ../data/generated_data
@@ -97,11 +98,25 @@ if __name__ == "__main__":
 
         # Generate and save data
         for i in range(num_files):
-            data = data_generator(distribution, size, params, seed=None)
+            data = data_generator(distribution, size, params, correlation=0.7, seed=None)
             file_name = f"{distribution}_size{size}_file{i+1}.txt"
-            for key, value in params.items():
-                file_name = f"{distribution}_{key}{value}_size{size}_file{i+1}.txt"
+            # Creazione di una stringa con i parametri
+            param_str = "_".join(f"{k}{v}" for k, v in params.items())
+            # Creazione del nome del file
+            file_name = f"{distribution}_{param_str}_size{size}_file{i+1}.txt"
             save_data_to_txt(data, file_name, dist_dir_path)            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             
             
             
