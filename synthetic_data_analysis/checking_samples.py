@@ -17,7 +17,7 @@ def calculate_statistics(series):
     """Calcola le statistiche per una serie temporale."""
     return {
         'mean': np.mean(series),
-        'std_dev': np.std(series),
+        'std_dev': np.std(series, ddof=1),
         'excess_kurtosis': kurtosis(series, fisher=True),
         'skewness': skew(series)
     }
@@ -43,7 +43,7 @@ def plot_density(series1, series2, bins, theoretical_pdf):
     
     ax.plot(bin_centers1, counts1, label='Densità Serie 1', color='blue')
     ax.plot(bin_centers2, counts2, label='Densità Serie 2', color='green')
-    x = np.linspace(min(np.min(series1), np.min(series2)), max(np.max(series1), np.max(series2)), 1000)
+    x = np.linspace(min(np.min(series1), np.min(series2)), max(np.max(series1), np.max(series2)), 3000)
     y = theoretical_pdf(x)
     ax.plot(x, y, 'r--', label='Funzione Teorica')
     
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     print(f"Statistiche Serie 2: {stats2}")
     print(f"Correlazione tra le serie: {correlation:.7f}")
     
-    mi_val_empirical = mutual_information_1(data, 2)
+    mi_val_empirical = mutual_information_1(data, k = 15)
     mi_th = -0.5*np.log(1-correlation**2)
     print(f"Th. val = {mi_th}, Emp. val = {mi_val_empirical}")
     
