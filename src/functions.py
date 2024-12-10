@@ -1,7 +1,28 @@
 import numpy as np
+import time
 import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
 from scipy.special import digamma
+from joblib import Parallel, delayed, parallel_backend
+
+
+
+def time_it(func):
+    """
+    Decorator to measure the execution time of a function.
+    """
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        print(f"Execution time for {func.__name__}: {end_time - start_time:.4f} seconds")
+        return result
+    return wrapper
+
+
+
+
+
 
 def add_noise(matrix,  magnitude = 1e-14, seed = None):
 	# Crea un generatore di numeri casuali
@@ -33,7 +54,44 @@ def find_k_nearest_neighbors(matrix, k):
     return indices[:, 1:], distances[:, 1:]  # Remove self-neighbor
 
 
-def mutual_information_1(dataset, k):
+
+
+@time_it
+def compute_marginal_counts(matrix, epsilon):
+    """
+    Computes the marginal counts for a single variable (1D) using NearestNeighbors for efficiency.
+    For each sample, counts how many points are within a specified distance threshold (epsilon/2).
+
+    Parameters:
+        matrix (2D array-like): Input data for a single variable, reshaped as a column vector of shape (n_samples, 1).
+        epsilon (1D array-like): Distance thresholds for each sample, provided as a vector.
+
+    Returns:
+        np.ndarray: Array of shape (n_samples,) containing the marginal counts for each sample.
+    """
+    from sklearn.neighbors import NearestNeighbors
+
+    # Ensure the input matrix is in 2D format
+    matrix = matrix.reshape(-1, 1)
+    n_samples = matrix.shape[0]
+    marginal_counts = np.zeros(n_samples)
+
+    # Initialize NearestNeighbors with a fixed radius (max epsilon)
+    max_epsilon = np.max(epsilon) / 2
+    nbrs = NearestNeighbors(radius=max_epsilon, metric='euclidean', algorithm='ball_tree')
+    nbrs.fit(matrix)
+
+    # Query the neighbors within the radius for all points
+    for i in range(n_samples):
+        distances, _ = nbrs.radius_neighbors(matrix[i].reshape(1, -1), radius=epsilon[i] / 2)
+        marginal_counts[i] = len(distances[0]) - 1  # Exclude the point itself
+
+    return marginal_counts    
+
+
+
+@time_it
+def mutual_information_1(dataset, k, n_jobs = 2):
 
 	"""
 	Computes the mutual information among multiple 1D variables based on Grassberger's method.
@@ -54,23 +112,14 @@ def mutual_information_1(dataset, k):
 	epsilon = 2 * distances[:, k-1]  # 2*Distance to the k-th nearest neighbor for each point
 	print("Epsilon/2 values (joint space):", epsilon/2)
 	
-	# Step 2: Initialize the counts for each variable
-	marginal_counts = np.zeros((n_variables, n_samples))
+	# Step 2: Parallel computation of marginal counts
+	def compute_counts_for_variable(var_idx):
+		marginal_data = dataset[:, var_idx].reshape(-1, 1)
+		return np.maximum(0, compute_marginal_counts(marginal_data, epsilon))
+
+	results = Parallel(n_jobs=n_jobs)(delayed(compute_counts_for_variable)(var_idx) for var_idx in range(n_variables))
+	marginal_counts = np.array(results)
 	
-	
-	for var_idx in range(n_variables):
-		# Extract the current variable as a 1D array
-		marginal_data = dataset[:, var_idx]
-		
-		# Compute pairwise differences (Euclidean distance in 1D)
-		distances_marginal = np.abs(marginal_data[:, None] - marginal_data)
-		print(f"\nDistances Marginal for Variable {var_idx + 1}:\n", distances_marginal)
-		
-		# Count points within epsilon/2 for each point
-		marginal_counts[var_idx] = np.maximum(
-		    0, np.sum(distances_marginal < epsilon[:, None] / 2, axis=1) - 1
-		)
-		print(f"\nMarginal Counts for Variable {var_idx + 1}:\n", marginal_counts[var_idx])
 
 		
     # Step 3: Compute the mutual information using Grassberger's formula
@@ -82,6 +131,12 @@ def mutual_information_1(dataset, k):
 
 	
 	return mi
+
+
+
+
+    
+
 
 
 
