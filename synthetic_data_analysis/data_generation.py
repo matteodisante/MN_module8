@@ -60,8 +60,8 @@ if __name__ == "__main__":
     distributions_to_generate = [
         {
             'distribution': 'gaussian',
-            'size': 20000,
-            'num_files': 10,
+            'size': int(3e7),
+            'num_files': 3,
             'params': {'mu': 0, 'sigma': 1}
         }#,
 #        {
