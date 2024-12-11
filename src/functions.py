@@ -22,8 +22,6 @@ def time_it(func):
 
 
 
-
-
 def add_noise(matrix,  magnitude = 1e-14, seed = None):
 	# Crea un generatore di numeri casuali
 	rng = np.random.default_rng(seed = seed)
@@ -69,7 +67,6 @@ def compute_marginal_counts(matrix, epsilon):
     Returns:
         np.ndarray: Array of shape (n_samples,) containing the marginal counts for each sample.
     """
-    from sklearn.neighbors import NearestNeighbors
 
     # Ensure the input matrix is in 2D format
     matrix = matrix.reshape(-1, 1)
