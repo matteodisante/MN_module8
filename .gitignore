@@ -1,3 +1,6 @@
+# Image file extensions
+*.png
+
 # macOS System Files
 .DS_Store
 
