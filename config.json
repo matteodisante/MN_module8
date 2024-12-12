@@ -1,0 +1,22 @@
+{
+    "output_dir": "data",
+    "distributions": [
+        {
+            "name": "uniform",
+            "params": {
+                "low": 0,
+                "high": 5
+            },
+            "sizes": [10000, 50000],
+            "correlation": 0.5
+        },
+        {
+            "name": "exponential",
+            "params": {
+                "lambda": 2
+            },
+            "sizes": [10000, 50000],
+            "correlation": 0.9
+        }
+    ]
+}
