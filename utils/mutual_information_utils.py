@@ -1,3 +1,5 @@
+import sys
+import os
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
@@ -44,7 +46,7 @@ def compute_marginal_counts(matrix, epsilon):
     marginal_counts = np.zeros(n_samples)
 
     # Initialize NearestNeighbors with a fixed radius (max epsilon)
-    nbrs = NearestNeighbors(radius=np.max(epsilon) / 2, metric='euclidean', algorithm='ball_tree')fit(matrix)
+    nbrs = NearestNeighbors(radius=np.max(epsilon) / 2, metric='euclidean', algorithm='ball_tree').fit(matrix)
 
     # Query the neighbors within the radius for all points
     for i in range(n_samples):

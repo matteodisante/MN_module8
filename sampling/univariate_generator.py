@@ -38,15 +38,17 @@ def data_generator(distribution, size, params, correlation=None, seed=None):
 	    sigma = params.get('sigma', 1)
 	    series_1 = rng.normal(mu, sigma, size)
 	    series_2 = rng.normal(mu, sigma, size)
-	    return np.column_stack((series_1, series_2))
+	    
 			
 	    if correlation is not None:
 	    	corr_series = correlate_data(np.column_stack((series_1, series_2)), correlation)
 	    	series_1 = corr_series[:,0]
 	    	series_2 = corr_series[:,1]
 	    	return np.column_stack((series_1, series_2))
+	    else:
+	    	return np.column_stack((series_1, series_2))
 	    	
-	
+
 	# Generate two independent gaussian series with mean 0 and std.dev 1        
 	
 	if distribution in ['exponential', 'uniform']:
