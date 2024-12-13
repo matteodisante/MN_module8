@@ -2,13 +2,53 @@
     "output_dir": "data",
     "distributions": [
         {
-            "name": "gaussian",
+            "name": "univariate_gaussian",
             "params": {
                 "mu": 0,
                 "sigma": 3
             },
             "sizes": [10000, 50000],
             "correlation": 0.8
+        },
+        {
+            "name": "bivariate_gaussian",
+            "params": {
+                "mean_x": 5,
+                "mean_y": 3,
+                "correlation": 0.8
+            },
+            "sizes": [20000,30000]   
+        },
+        
+
+        {
+            "name": "bivariate_uniform",
+            "params": {
+                "a": 3,
+                "b": 2
+            },
+            "simulation_settings": {
+                "x0": 0,
+                "y0": 0,
+                "delta": 0.5,
+                "n_cores": 4,
+                "burn_in": 10000
+            },
+            "sizes": [10000, 50000]
+        },
+                {
+            "name": "bivariate_gamma_exponential",
+            "params": {
+                "theta": 2
+            },
+            "simulation_settings": {
+                "x0": 0,
+                "y0": 0,
+                "delta": 0.5,
+                "n_cores": 4,
+                "burn_in": 10000
+            },
+            "sizes": [20000, 30000]
         }
     ]
 }
