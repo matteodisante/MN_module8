@@ -24,6 +24,10 @@ def metropolis_hastings(f, q_sampler, q_probability, x0, y0, steps, delta=1.0, c
     points = []
     x, y = x0, y0
     current_pdf = f(x, y)  # Calcola la PDF una volta per il punto iniziale
+    
+    if current_pdf == 0 or np.isnan(current_pdf):
+        raise ValueError(f"Initial point ({x0}, {y0}) has zero or invalid probability.")
+    
     for _ in range(steps):
         # Generazione del punto proposto
         if check:
