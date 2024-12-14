@@ -12,7 +12,7 @@ from math_utils import correlate_data
 
 
 @time_it
-def data_generator(distribution, size, params, correlation=None, seed=None):
+def generate_univariate_data(distribution, size, params, correlation=None, seed=None):
 	"""
 	Generate data from a specified distribution, with optional correlation for univariate distributions.
 
@@ -32,7 +32,7 @@ def data_generator(distribution, size, params, correlation=None, seed=None):
 	rng = np.random.default_rng(seed)
 	
 	# Handle admitted univariate distributions
-	if distribution in ['gaussian']:  	
+	if distribution in ['univariate_gaussian']:  	
 		# Generate two independent series based on the specified distribution
 	    mu = params.get('mu', 0)
 	    sigma = params.get('sigma', 1)
