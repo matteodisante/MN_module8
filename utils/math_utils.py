@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.stats import pearsonr, kurtosis, skew, norm, multivariate_normal
 from scipy.special import gamma
+from functools import partial
 
 
 def correlate_data(independent_series, correlation):
@@ -33,40 +34,34 @@ def log_likelihood(series, theoretical_pdf):
     """Calcola la log-likelihood di una serie temporale per una data distribuzione teorica."""
     return np.sum(np.log(theoretical_pdf(series)))
 
-# Gaussiana bivariata
-def gaussian_target_distribution(x, y, mean_x=0, mean_y=0, correlation=0):
-    """
-    Compute the Gaussian target distribution (PDF) for given x and y, with specified mean and correlation.
-    """
-    # Ensure x and y are arrays for consistency
-    x = np.atleast_1d(x)
-    y = np.atleast_1d(y)
 
-    # Mean vector
+
+def gaussian_target_distribution(x, y, mean_x=0, mean_y=0, std_dev_x=1, std_dev_y=1, correlation=0):
     mean = [mean_x, mean_y]
-    std_dev_x = 1
-    std_dev_y = 1
-
-    # Covariance matrix
     cov_matrix = [
         [std_dev_x**2, correlation * std_dev_x * std_dev_y],
         [correlation * std_dev_x * std_dev_y, std_dev_y**2]
     ]
-
-    # Combine coordinates
-    pos = np.column_stack((x, y))
-
-    # Compute PDF
+    pos = np.stack((x, y), axis=-1)
     rv = multivariate_normal(mean, cov_matrix)
-    pdf = rv.pdf(pos)
-
-    # Return the scalar or array as-is
-    return pdf if not np.isscalar(pdf) else float(pdf)
-        
+    return rv.pdf(pos)
+    
+               
     
 # Gamma-exponential multivariate distribution 
-def gamma_exponential_target_distribution(x, y, theta = 2):
-    return 1/gamma(x) * x**theta*np.exp(-x-x*y)
+def gamma_exponential_target_distribution(x, y, theta=2):
+    """
+    Compute the gamma-exponential target distribution.
+
+    Parameters:
+        x (float or array): x-coordinate(s)
+        y (float or array): y-coordinate(s)
+        theta (float): Parameter of the distribution.
+
+    Returns:
+        float or array: Value(s) of the gamma-exponential distribution.
+    """
+    return (1 / gamma(x)) * (x**theta) * np.exp(-x - x * y)
     
 
 # Weinman order exponential distribution    
@@ -96,4 +91,15 @@ def circle_target_distribution(x, y, theta = 1):
     return     
     
     
-
+def configure_target_function(target_function, **kwargs):
+    """
+    Create a picklable, pre-configured version of a target function.
+    
+    Parameters:
+        target_function (callable): The bivariate target function.
+        **kwargs: Parameters to pre-configure the target function.
+        
+    Returns:
+        callable: A function ready to use, with parameters pre-configured.
+    """
+    return partial(target_function, **kwargs)
