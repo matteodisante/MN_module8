@@ -8,9 +8,9 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # Import utility modules
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'utils/')))
-from plot_utils import plot_histograms, plot_density
+from plot_utils import plot_histograms, plot_density, plot_3d_histogram, plot_marginals
 from math_utils import log_likelihood, calculate_statistics
-from io_utils import load_data
+from io_utils import ensure_directory, save_data, load_data
 
 def analyze_univariate_data(series1, series2):
     """
@@ -30,6 +30,11 @@ def analyze_univariate_data(series1, series2):
     print(f"Statistics for Series 1: {stats1}")
     print(f"Statistics for Series 2: {stats2}")
     print(f"Correlation between series: {correlation:.7f}")
+    
+        
+    # Save empirical statistics and correlation
+    #save_data(np.array([[correlation]]), os.path.join(save_dir, "correlation.csv"))
+    
     
     # Plotting histograms and density
     plot_histograms(series1, series2, bins)
@@ -51,7 +56,7 @@ def analyze_multivariate_data(data, target_function=None):
         target_function (callable, optional): Target PDF for theoretical comparisons.
     """
     series1, series2 = data[:, 0], data[:, 1]
-    bins = int(np.sqrt(len(series1)))
+    bins = 100
     
     # Compute correlation
     correlation = np.corrcoef(series1, series2)[0, 1]
@@ -67,7 +72,7 @@ def analyze_multivariate_data(data, target_function=None):
     plt.xlabel("X")
     plt.ylabel("Y")
     plt.grid(True)
-    plt.show(block=False)
+    plt.show(block=True)
     
     # 3D Histogram
     xpos, ypos = np.meshgrid(xedges[:-1], yedges[:-1], indexing="ij")
@@ -84,7 +89,7 @@ def analyze_multivariate_data(data, target_function=None):
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_zlabel("Density")
-    plt.show(block=False)
+    plt.show(block=True)
     
     # Marginals
     marginal_x = hist.sum(axis=0) * (yedges[1] - yedges[0])
@@ -104,7 +109,7 @@ def analyze_multivariate_data(data, target_function=None):
     plt.xlabel("Y")
     plt.ylabel("Density")
     plt.grid(True)
-    plt.show(block=False)
+    plt.show(block=True)
     
     # Theoretical distribution comparison
     if target_function:
