@@ -87,8 +87,7 @@ def run_parallel_metropolis_hastings(f, q_sampler, q_probability, x0, y0, steps,
                 [steps_per_core] * n_cores,
                 [delta] * n_cores,
                 [burn_in] * n_cores,
-                [check] * n_cores,
+                [check] * n_cores
             )
         )
-
     return np.vstack(results)
