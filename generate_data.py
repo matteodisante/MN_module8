@@ -29,14 +29,12 @@ from math_utils import (
 
 
 
-
 def generate_synthetic_data(config_file, selected_distributions):
     config = load_config(config_file)
     output_dir = config['output_dir']
 
     target_distributions = {
         "bivariate_gaussian": gaussian_target_distribution,
-        "bivariate_uniform": bivariate_uniform_target_distribution,
         "gamma_exponential": gamma_exponential_target_distribution,
         "ordered_weinman": weinman_ordered_target_distribution,
         "circle_distribution": circle_target_distribution
@@ -49,7 +47,9 @@ def generate_synthetic_data(config_file, selected_distributions):
         
         params = dist['params']
         sizes = dist['sizes']
-        correlation = dist.get('correlation', {})
+        correlation = dist.get('correlation', {}) 
+        a_tol = dist.get('adjuste_correlation_settings', {})["a_tol"]
+        max_iter = dist.get('adjuste_correlation_settings', {})["max_iter"]
         sim_settings = dist.get('simulation_settings', {})
         
 
@@ -58,7 +58,7 @@ def generate_synthetic_data(config_file, selected_distributions):
             
             #Handling (x,y) generation from univariate distribution
             if not sim_settings:
-                data = generate_univariate_data(dist_name, size, params, correlation)
+                data = generate_univariate_data(dist_name, size, params, correlation, a_tol, max_iter)
                 print(f"Generated data shape: {data.shape}")
                 print(f"First few rows of data:\n{data}")  # Mostra le prime righe dei dati
                 #Save generated data in a .csv file
