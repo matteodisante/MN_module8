@@ -50,24 +50,7 @@ def ensure_directory(dir_path):
     
     
 
-def save_data_to_txt(data, file_name, dir_path):
-    """
-    Save data to a .txt file in the specified directory.
-
-    Parameters:
-        data (np.ndarray): The data to save.
-        file_name (str): The name of the file (without directory).
-        dir_path (str): Path to the directory.
-
-    Returns:
-        None
-    """
-    file_path = os.path.join(dir_path, file_name)
-    np.savetxt(file_path, data, delimiter=',')
-    print(f"File saved: {file_path}")
     
-    
-
     
 def save_data(data, file_path):
     ensure_directory(os.path.dirname(file_path))
