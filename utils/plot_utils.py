@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import seaborn as sns
+import scipy.stats as stats
 
 
 
@@ -16,24 +18,37 @@ def plot_histograms(series1, series2, bins):
     plt.legend()
     plt.show()
 
-def plot_density(series1, series2, bins, theoretical_pdf):
-    """Disegna le curve di densità sovrapposte con la funzione teorica."""
-    fig, ax = plt.subplots(figsize=(10, 5))
-    counts1, bin_edges1 = np.histogram(series1, bins=bins, density=True)
-    counts2, bin_edges2 = np.histogram(series2, bins=bins, density=True)
-    bin_centers1 = 0.5 * (bin_edges1[:-1] + bin_edges1[1:])
-    bin_centers2 = 0.5 * (bin_edges2[:-1] + bin_edges2[1:])
+
+def plot_density(series1, series2=None, bins=50):
+    """
+    Generate a density plot for one or two series of data using KDE.
+
+    Parameters:
+        series1 (array-like): First data series.
+        series2 (array-like, optional): Second data series (default: None).
+        bins (int): Number of bins for the histogram (used for reference).
+    """
+    # Plot setup
+    fig, ax = plt.subplots(figsize=(10, 6))
     
-    ax.plot(bin_centers1, counts1, label='Densità Serie 1', color='blue')
-    ax.plot(bin_centers2, counts2, label='Densità Serie 2', color='green')
-    x = np.linspace(min(np.min(series1), np.min(series2)), max(np.max(series1), np.max(series2)), 3000)
-    y = theoretical_pdf(x)
-    ax.plot(x, y, 'r--', label='Funzione Teorica')
+    # Plot KDE for series1
+    sns.kdeplot(series1, fill=True, label="Density - Series 1", color="blue", ax=ax)
     
-    ax.set_xlabel('Valore')
-    ax.set_ylabel('Densità')
+    # Optionally plot KDE for series2
+    if series2 is not None:
+        sns.kdeplot(series2, fill=True, label="Density - Series 2", color="green", ax=ax)
+    
+    # Overlay histograms (optional, can be removed)
+    ax.hist(series1, bins=bins, density=True, alpha=0.3, color="blue", label="Histogram - Series 1")
+    if series2 is not None:
+        ax.hist(series2, bins=bins, density=True, alpha=0.3, color="green", label="Histogram - Series 2")
+    
+    # Plot labels and legend
+    ax.set_xlabel("Value")
+    ax.set_ylabel("Density")
+    ax.set_title("Density Plot")
     ax.legend()
-    plt.title('Curve di Densità con Funzione Teorica')
+    
     plt.show()
     
     
@@ -73,3 +88,7 @@ def plot_marginals(samples, output_path):
     plt.tight_layout()
     plt.savefig(output_path)
     plt.close()
+    
+
+    
+    
