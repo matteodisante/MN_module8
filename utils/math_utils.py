@@ -68,10 +68,45 @@ def gamma_exponential_target_distribution(x, y, theta=2):
 def weinman_ordered_target_distribution(x, y, theta = 1):
     return 2/theta * np.exp(-2*x - (y-x)/theta)    
     
+
     
-def bivariate_uniform_target_distribution():
-    skip
-    return    
+    
+def bivariate_uniform_target_distribution(x, y, a=2, b=1, correlation=0):
+    """
+    Compute the uniform PDF over a rotated elliptical domain, given axes and correlation.
+    
+    Parameters:
+        x (float or array): x-coordinate(s).
+        y (float or array): y-coordinate(s).
+        a (float): Semi-major axis of the ellipse.
+        b (float): Semi-minor axis of the ellipse.
+        correlation (float): Desired correlation coefficient (-1 <= correlation <= 1).
+    
+    Returns:
+        float or array: Value(s) of the PDF.
+    """
+    # Check valid correlation range
+    if not (-1 <= correlation <= 1):
+        raise ValueError("Correlation must be between -1 and 1.")
+    
+    # Compute the rotation angle theta from the correlation
+    if a != b:
+        theta = 0.5 * np.arcsin((correlation * (a**2 + b**2)) / (a**2 - b**2))
+    else:
+        theta = 0  # For a circle, no rotation needed
+    
+    # Apply rotation transformation
+    x_rot = x * np.cos(theta) + y * np.sin(theta)
+    y_rot = -x * np.sin(theta) + y * np.cos(theta)
+    
+    # Ellipse equation
+    ellipse = (x_rot / a)**2 + (y_rot / b)**2
+    
+    # Constant density within the ellipse
+    pdf = np.where(ellipse <= 1, 1 / (np.pi * a * b), 0)
+    return pdf
+    
+    
     
 # Weinman order exponential distribution    
 def circle_target_distribution(x, y, theta = 1):
