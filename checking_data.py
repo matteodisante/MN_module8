@@ -8,9 +8,17 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # Import utility modules
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'utils/')))
-from plot_utils import plot_histograms, plot_density, plot_3d_histogram, plot_marginals
+from plot_utils import (plot_histograms, plot_density, plot_3d_histogram, plot_marginals, 
+                        plot_scatter_with_density, plot_qq
+                        ) 
 from math_utils import log_likelihood, calculate_statistics
 from io_utils import ensure_directory, save_data, load_data
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'utils/')))
+# Utility functions for file management and configuration loading
+from pre_processing_utils import sample_data
+
+
 
 def analyze_univariate_data(series1, series2):
     """
@@ -20,7 +28,7 @@ def analyze_univariate_data(series1, series2):
         series1 (np.ndarray): First univariate series.
         series2 (np.ndarray): Second univariate series.
     """
-    bins = int(np.sqrt(len(series1)))
+    bins = 100
     
     # Statistics and correlation
     stats1 = calculate_statistics(series1)
@@ -36,17 +44,15 @@ def analyze_univariate_data(series1, series2):
     #save_data(np.array([[correlation]]), os.path.join(save_dir, "correlation.csv"))
     
     
-    # Plotting histograms and density
-    plot_histograms(series1, series2, bins)
-    theoretical_pdf = norm.pdf
-    plot_density(series1, series2, bins, theoretical_pdf)
+    # Sample the data
+    sample_size = 300000  # Adjust this number as needed
+    series1_sample, series2_sample = sample_data(series1, series2, sample_size)
     
-    # Log-likelihood
-    ll1 = log_likelihood(series1, theoretical_pdf)
-    ll2 = log_likelihood(series2, theoretical_pdf)
-    print(f"Log-Likelihood for Series 1: {ll1}")
-    print(f"Log-Likelihood for Series 2: {ll2}")
-
+    # Plotting using sampled data
+    plot_histograms(series1_sample, series2_sample, bins)
+    plot_density(series1_sample, series2_sample, bins)
+    
+    
 def analyze_multivariate_data(data, target_function=None):
     """
     Analyze and plot multivariate data: correlation, 2D histogram, scatter plot, and marginals.
@@ -127,6 +133,7 @@ def analyze_multivariate_data(data, target_function=None):
         ax.set_zlabel("Density")
         plt.show(block=False)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyze univariate or multivariate data from a file.")
     parser.add_argument("file_path", type=str, help="Path to the input data file (CSV format).")
@@ -135,10 +142,25 @@ if __name__ == "__main__":
 
     # Load data
     data = load_data(args.file_path)
-    if data.shape[1] == 2:
-        print("Detected multivariate data. Running multivariate analysis...")
-        analyze_multivariate_data(data)
-    else:
-        print("Detected univariate data. Running univariate analysis...")
-        series1, series2 = data[:, 0], data[:, 1]
-        analyze_univariate_data(series1, series2)
+
+    # Check for valid data format
+    if data.shape[1] != 2:
+        raise ValueError("The dataset must have exactly 2 columns for analysis.")
+
+    # Ask user for the type of analysis
+    while True:
+        print("\nIs this dataset bivariate or correlated univariate?")
+        print("1. Bivariate")
+        print("2. Correlated Univariate")
+        user_input = input("Enter 1 or 2: ").strip()
+        if user_input == "1":
+            print("Running bivariate analysis...")
+            analyze_multivariate_data(data)
+            break
+        elif user_input == "2":
+            print("Running correlated univariate analysis...")
+            series1, series2 = data[:, 0], data[:, 1]
+            analyze_univariate_data(series1, series2)
+            break
+        else:
+            print("Invalid input. Please enter 1 or 2.")
