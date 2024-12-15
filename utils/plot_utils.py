@@ -68,7 +68,7 @@ def plot_3d_histogram(samples, title, output_path, bins=30):
 
 def plot_marginals(samples, output_path):
     """Plotta le marginali standard e in scala log-log."""
-    fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+    fig, axes = plt.subplots(4, 4, figsize=(10, 8))
 
     axes[0, 0].hist(samples[:, 0], bins=50, density=True)
     axes[0, 0].set_title("Marginale X")
