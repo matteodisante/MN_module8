@@ -8,9 +8,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # Import utility modules
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'utils/')))
-from plot_utils import (plot_histograms, plot_density, plot_3d_histogram, plot_marginals, 
-                        plot_scatter_with_density, plot_qq
-                        ) 
+from plot_utils import plot_histograms, plot_density, plot_3d_histogram, plot_marginals 
 from math_utils import log_likelihood, calculate_statistics
 from io_utils import ensure_directory, save_data, load_data
 
