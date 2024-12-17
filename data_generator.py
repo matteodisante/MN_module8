@@ -24,7 +24,8 @@ from math_utils import (
     gamma_exponential_target_distribution,  # Gamma-exponential target distribution
     weinman_ordered_target_distribution,    # Ordered Weinman exponential distribution
     circle_target_distribution,      # Circle target distribution
-    bivariate_uniform_target_distribution   # Bivariate uniform target distribution
+    bivariate_uniform_target_distribution,   # Bivariate uniform target distribution
+    bivariate_exponential_target_distribution #Biviare with two marginal exponential
 )
 
 
@@ -37,7 +38,8 @@ def generate_synthetic_data(config_file, selected_distributions):
         "bivariate_gaussian": gaussian_target_distribution,
         "gamma_exponential": gamma_exponential_target_distribution,
         "ordered_weinman": weinman_ordered_target_distribution,
-        "circle_distribution": circle_target_distribution
+        "circle_distribution": circle_target_distribution,
+        "bivariate_exponential": bivariate_exponential_target_distribution
         }
 
     for dist in config['distributions']:
