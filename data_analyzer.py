@@ -115,6 +115,28 @@ def analyze_multivariate_data(data, target_function=None):
     plt.grid(True)
     plt.show(block=True)
     
+    
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(xedges[:-1], marginal_x, label="Marginal X")
+    plt.title("Marginal Distribution of X")
+    plt.xlabel("X")
+    plt.ylabel("Density")
+    plt.yscale('log')
+    plt.grid(True)
+    
+    plt.subplot(1, 2, 2)
+    plt.plot(yedges[:-1], marginal_y, label="Marginal Y")
+    plt.title("Marginal Distribution of Y")
+    plt.xlabel("Y")
+    plt.ylabel("Density")
+    plt.yscale('log')
+    plt.grid(True)
+    plt.show(block=True)
+    
+    
+    
+    
     # Theoretical distribution comparison
     if target_function:
         x = np.linspace(xedges.min(), xedges.max(), 300)
