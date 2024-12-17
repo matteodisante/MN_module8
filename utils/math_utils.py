@@ -69,6 +69,40 @@ def weinman_ordered_target_distribution(x, y, theta = 1):
     return 2/theta * np.exp(-2*x - (y-x)/theta)    
     
 
+
+
+
+def MO_bivariate_exponential_target_distribution(x, y, correlation = 0.83):
+    
+    lambda_1 = 1
+    lambda_2 = 1
+    # This formula is strictly realted with setting lambda_1 = lambda_2 = 1
+    lambda_12 = correlation/(1-correlation)     
+    
+
+    if x < y:
+        return (lambda_1+lambda_12) * lambda_2 * np.exp(-(lambda_1+lambda_12)*x - lambda_2*y) 
+    
+    else:
+        return lambda_1 * (lambda_2+lambda_12) * np.exp(-lambda_1*x - (lambda_2 + lambda_12)*y) 
+    
+
+
+def bivariate_exponential_target_distribution(x, y, lambda_1 = 1, lambda_2 = 2, correlation = 0.):
+    
+
+    correlation = np.min(np.array([1/8, correlation]))
+    # This formula is strictly realted with setting lambda_1 = lambda_2 = 1
+    alpha = 4 * correlation   
+    
+    
+    return lambda_1 * lambda_2 * np.exp(-lambda_1 * x - lambda_2 * y) * \
+            (1 + alpha * (2 * np.exp(-lambda_1 * x) -1 ) * ( np.exp(-lambda_1 * y) - 1) )
+
+
+
+
+
     
     
 def bivariate_uniform_target_distribution(x, y, a=2, b=1, correlation=0):
@@ -108,7 +142,7 @@ def bivariate_uniform_target_distribution(x, y, a=2, b=1, correlation=0):
     
     
     
-# Weinman order exponential distribution    
+# Circle distribution    
 def circle_target_distribution(x, y, theta = 1):
     prefactor = 1/(np.pi* (b-a) * (c-a))
     array_norm = np.linalg.norm(np.array([x,y]))
@@ -125,7 +159,9 @@ def circle_target_distribution(x, y, theta = 1):
         
     return     
     
-    
+
+
+
 def configure_target_function(target_function, **kwargs):
     """
     Create a picklable, pre-configured version of a target function.
