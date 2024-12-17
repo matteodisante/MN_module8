@@ -52,7 +52,7 @@
                 "mean_y": 3,
                 "std_dev_x": 1,
                 "std_dev_y": 1,
-                "correlation": 0.8
+                "correlation": 0.1
             },
             "simulation_settings": {
                 "x0": 0,
@@ -70,6 +70,27 @@
         },
         
         
+                {
+            "name": "bivariate_exponential",
+            "params": {
+                "lambda_1": 2,
+                "lambda_2": 4,
+                "correlation": 0.1
+            },
+            "simulation_settings": {
+                "x0": 0,
+                "y0": 0,
+                "delta": 0.5,
+                "n_cores": 8,
+                "burn_in": 20000,
+                "check": true
+            },
+            "adjuste_correlation_settings": {
+                "a_tol": 1e-4,
+                "max_iter": 4000
+            },
+            "sizes": [300000, 600000, 1000000]   
+        },
         
         
         
