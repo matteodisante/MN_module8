@@ -3,115 +3,68 @@
     "distributions": 
     [
         {
-            "name": "correlated_gaussian",
+            "name": "correlated_gaussian_rv",
             "params": {
                 "mu": 0,
-                "sigma": 3
+                "sigma": 1
             },
-            "sizes": [10000, 50000],
+            "sizes": [2000, 10000, 20000],
             "correlation": 0.8
+        },
+
+        {
+            "name": "independent_gaussian_rv",
+            "params": {
+                "mu": 0,
+                "sigma": 1
+            },
+            "sizes": [2000, 10000, 20000]
         },
         
         
         {
-            "name": "correlated_uniform",
+            "name": "independent_uniform_rv",
             "params": {
-                "low": -2,
-                "high": 2
+                "low": 0,
+                "high": 1
             },
-            
-            "adjuste_correlation_settings": {
-                "a_tol": 1e-7,
-                "max_iter": 10000
-            },
-            "sizes": [15000000],
-            "correlation": 0.94267
+            "sizes": [2000, 10000, 20000]
         },
         
         
-                {
-            "name": "correlated_exponential",
+        {
+            "name": "independent_exponential_rv",
             "params": {
                 "lambda": 2
             },
+            "sizes": [2000, 10000, 20000]
+        },
             
-            "adjuste_correlation_settings": {
-                "a_tol": 1e-4,
-                "max_iter": 4000
-            },
-            "sizes": [240000, 580000],
-            "correlation": 0.82752
-        },
-        
-        
-        
-        {
-            "name": "bivariate_gaussian",
-            "params": {
-                "mean_x": 5,
-                "mean_y": 3,
-                "std_dev_x": 1,
-                "std_dev_y": 1,
-                "correlation": 0.1
-            },
-            "simulation_settings": {
-                "x0": 0,
-                "y0": 0,
-                "delta": 0.5,
-                "n_cores": 8,
-                "burn_in": 20000,
-                "check": false
-            },
-            "adjuste_correlation_settings": {
-                "a_tol": 1e-4,
-                "max_iter": 4000
-            },
-            "sizes": [300000, 600000, 1000000]   
-        },
-        
-        
-                {
-            "name": "bivariate_exponential",
-            "params": {
-                "lambda_1": 2,
-                "lambda_2": 4,
-                "correlation": 0.1
-            },
-            "simulation_settings": {
-                "x0": 0,
-                "y0": 0,
-                "delta": 0.5,
-                "n_cores": 8,
-                "burn_in": 20000,
-                "check": true
-            },
-            "adjuste_correlation_settings": {
-                "a_tol": 1e-4,
-                "max_iter": 4000
-            },
-            "sizes": [300000, 600000, 1000000]   
-        },
-        
-        
         
         {
             "name": "gamma_exponential",
             "params": {
-                "theta": 30
+                "theta": 10
             },
-            "simulation_settings": {
-                "x0": 1,
-                "y0": 1,
-                "delta": 0.5,
-                "n_cores": 8,
-                "burn_in": 20000,
-                "check": true
+            "sizes": [2000, 10000, 20000]
+        },
+
+        {
+            "name": "ordered_wienman_exponential",
+            "params": {
+                "theta": 1
             },
-            "adjuste_correlation_settings": {
-                "a_tol": 1e-4,
-                "max_iter": 4000
+            "sizes": [2000, 10000, 20000]
+        },
+
+        {
+            "name": "circular",
+            "params": {
+                "a": 1,
+                "b": 2,
+                "c": 3
             },
-            "sizes": [600000, 1000000]
+            "sizes": [2000, 10000, 20000]
         }
     ]
 }
