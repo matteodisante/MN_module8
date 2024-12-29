@@ -1,10 +1,13 @@
 import numpy as np
+import sys
+import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../utils')))
 from math_utils import correlate_data
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '/sampling')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'sampling')))
 from univariate_generator import generate_triangular
+
 
 def independent_gaussian_rv(mu, sigma, size):
 
