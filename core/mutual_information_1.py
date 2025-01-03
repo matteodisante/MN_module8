@@ -4,13 +4,11 @@ import numpy as np
 from joblib import Parallel, delayed
 from scipy.special import digamma
 
-
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../utils')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../utils/')))
 from decorators import time_it
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../utils')))
-from mutual_information_utils import * 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../utils/')))
+from mutual_information_utils import find_k_nearest_neighbors, compute_marginal_counts
 
 
 @time_it
@@ -52,4 +50,3 @@ def mutual_information_1(dataset, k, n_jobs = 2):
 	)
 
 	return mi
-	
