@@ -1,6 +1,5 @@
 import numpy as np
-from scipy.stats import pearsonr, kurtosis, skew, norm, multivariate_normal
-from scipy.special import gamma
+from scipy.stats import kurtosis, skew
 from functools import partial
 
 

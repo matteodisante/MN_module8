@@ -1,11 +1,4 @@
-import sys
-import os
 import numpy as np
-from scipy.stats import norm, expon, uniform, pearsonr
-from scipy.optimize import brentq
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../utils')))
-from decorators import time_it
 
 # Funzione per generare campioni da una densità triangolare
 def generate_triangular(a, b, c, size):
