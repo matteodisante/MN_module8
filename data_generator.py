@@ -4,18 +4,16 @@ import argparse
 
 
 # Import helper modules from utils
-
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'utils')))
 from math_utils import *
 from config_utils import load_config
-from io_utils import * # in realtà non è stato usato tale script!
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'sampling')))
 from multivariate_generator import *
 
 
 def generate_and_save_data(config, selected_distribution_name, selected_size=None, all_sizes=False, num_files=20):
-    output_dir = config.get('output_dir', 'synthetic_data')
+    output_dir = config.get('output_dir', 'data/synthetic_data')
 
     # Trovare la distribuzione selezionata nel config
     distribution = next((d for d in config['distributions'] if d['name'] == selected_distribution_name), None)
