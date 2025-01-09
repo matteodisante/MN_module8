@@ -1,7 +1,6 @@
 import os
 import sys
 import argparse
-import pandas as pd
 
 
 # Import helper modules from utils
@@ -9,7 +8,7 @@ import pandas as pd
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'utils')))
 from math_utils import *
 from config_utils import load_config
-from io_utils import * # in realtà non è stato tale script!
+from io_utils import * # in realtà non è stato usato tale script!
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'sampling')))
 from multivariate_generator import *
@@ -84,7 +83,6 @@ def generate_and_save_data(config, selected_distribution_name, selected_size=Non
             # Salvataggio dei dati in un file TXT senza header e con alta precisione
             np.savetxt(output_file, data, fmt="%.15f")
             print(f"File {file_num}/{num_files} generated and saved in: {output_file}")
-
 
 
 

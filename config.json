@@ -1,5 +1,5 @@
 {
-    "output_dir": "synthetic_data",
+    "output_dir": "data/synthetic_data",
     "distributions": 
     [
         {
