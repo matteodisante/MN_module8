@@ -1,5 +1,6 @@
 {
     "output_dir": "data/synthetic_data",
+    "sizes": [10000, 50000, 100000],
     "distributions": 
     [
         {
@@ -8,7 +9,6 @@
                 "mu": 0,
                 "sigma": 1
             },
-            "sizes": [10000, 50000, 100000],
             "correlation": 0.8
         },
 
@@ -17,8 +17,7 @@
             "params": {
                 "mu": 0,
                 "sigma": 1
-            },
-            "sizes": [10000, 50000, 100000]
+            }
         },
         
         
@@ -27,8 +26,7 @@
             "params": {
                 "low": 0,
                 "high": 1
-            },
-            "sizes": [10000, 50000, 100000]
+            }
         },
         
         
@@ -36,8 +34,7 @@
             "name": "independent_exponential_rv",
             "params": {
                 "lambda": 2
-            },
-            "sizes": [10000, 50000, 100000]
+            }
         },
             
         
@@ -45,16 +42,14 @@
             "name": "gamma_exponential",
             "params": {
                 "theta": 10
-            },
-            "sizes": [10000, 50000, 100000]
+            }
         },
 
         {
             "name": "ordered_wienman_exponential",
             "params": {
                 "theta": 1
-            },
-            "sizes": [10000, 50000, 100000]
+            }
         },
 
         {
@@ -63,8 +58,7 @@
                 "a": 1,
                 "b": 2,
                 "c": 3
-            },
-            "sizes": [10000, 50000, 100000]
+            }
         }
     ]
 }

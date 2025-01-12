@@ -15,39 +15,48 @@ from multivariate_generator import *
 def generate_and_save_data(config, selected_distribution_name, selected_size=None, all_sizes=False, num_files=20):
     output_dir = config.get('output_dir', 'data/synthetic_data')
 
-    # Trovare la distribuzione selezionata nel config
+    # Find the selected distribution in the config
     distribution = next((d for d in config['distributions'] if d['name'] == selected_distribution_name), None)
     if not distribution:
         raise ValueError(f"Distribution {selected_distribution_name} not found in config.")
 
-    # Parametri generali
+    # General parameters
     params = distribution['params']
 
-    # Se all_sizes è True, genera i dati per tutte le dimensioni disponibili
-    sizes_to_generate = distribution['sizes'] if all_sizes else [selected_size]
+    # Retrieve global sizes from the config
+    sizes_to_generate = config['sizes'] if all_sizes else [selected_size]
 
     for size in sizes_to_generate:
-        # Creazione della directory principale, se non esiste
+        # Create the main directory if it does not exist
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         
-        # Creazione della sottocartella per la distribuzione scelta
+        # Create a subdirectory for the selected distribution
         dist_dir = os.path.join(output_dir, selected_distribution_name)
         if not os.path.exists(dist_dir):
             os.makedirs(dist_dir)
 
-        # Creazione della sottocartella specifica per la dimensione
-        size_dir = os.path.join(dist_dir, f"{selected_distribution_name}_size_{size}")
+        # Handle correlated_gaussian_rv: Create a subdirectory for the correlation value
+        if selected_distribution_name == "correlated_gaussian_rv":
+            correlation = distribution.get('correlation', 0)  # Retrieve the correlation from the config
+            corr_dir = os.path.join(dist_dir, f"corr_{correlation:.2f}")
+            if not os.path.exists(corr_dir):
+                os.makedirs(corr_dir)
+        else:
+            corr_dir = dist_dir  # Use the distribution directory for other cases
+
+        # Create a specific subdirectory for the size
+        size_dir = os.path.join(corr_dir, f"size_{size}")
         if not os.path.exists(size_dir):
             os.makedirs(size_dir)
 
-        # Preparazione dei percorsi dei file
+        # Prepare file paths with simplified names (e.g., "01.txt", "02.txt")
         file_paths = [
-            os.path.join(size_dir, f"{selected_distribution_name}_size_{size}_{file_num:02d}.txt")
+            os.path.join(size_dir, f"{file_num:02d}.txt")
             for file_num in range(1, num_files + 1)
         ]
         
-        # Controllo se almeno un file esiste
+        # Check if any file already exists
         existing_files = [file_path for file_path in file_paths if os.path.exists(file_path)]
         if existing_files:
             print(f"\n{len(existing_files)} files already exist for this configuration (size {size}).")
@@ -58,7 +67,7 @@ def generate_and_save_data(config, selected_distribution_name, selected_size=Non
                 print(f"Skipping generation for size {size}.")
                 continue
 
-        # Dizionario per mappare le distribuzioni alle rispettive funzioni
+        # Dictionary to map distributions to their respective generation functions
         distribution_functions = {
             "independent_gaussian_rv": lambda params, size: independent_gaussian_rv(params['mu'], params['sigma'], size),
             "correlated_gaussian_rv": lambda params, size: correlated_gaussian_rv(params['mu'], params['sigma'], distribution['correlation'], size),
@@ -69,20 +78,18 @@ def generate_and_save_data(config, selected_distribution_name, selected_size=Non
             "circular": lambda params, size: circular(params['a'], params['b'], params['c'], size),
         }
 
-        # Recupera la funzione di generazione
+        # Retrieve the generation function
         generate_function = distribution_functions.get(distribution['name'])
         if not generate_function:
             raise ValueError(f"Unsupported distribution: {distribution['name']}")
 
-        # Generazione dei dati
+        # Generate data
         for file_num, output_file in enumerate(file_paths, start=1):
             data = generate_function(params, size)
 
-            # Salvataggio dei dati in un file TXT senza header e con alta precisione
+            # Save data to a TXT file without headers and with high precision
             np.savetxt(output_file, data, fmt="%.15f")
             print(f"File {file_num}/{num_files} generated and saved in: {output_file}")
-
-
 
 
 if __name__ == "__main__":
@@ -121,8 +128,8 @@ if __name__ == "__main__":
         print(f"\nSelected distribution: {selected_distribution['name']}")
 
         # Ask if the user wants to generate data for all sizes or a specific size
-        print(f"\nAvailable sizes for {selected_distribution['name']}:")
-        for i, size in enumerate(selected_distribution['sizes'], start=1):
+        print(f"\nAvailable sizes (global):")
+        for i, size in enumerate(config['sizes'], start=1):
             print(f"{i}. {size}")
 
         generate_all = None
@@ -160,8 +167,8 @@ if __name__ == "__main__":
                 try:
                     user_input = input("Select a size by number: ").strip()
                     selected_index = int(user_input) - 1
-                    if 0 <= selected_index < len(selected_distribution['sizes']):
-                        selected_size = selected_distribution['sizes'][selected_index]
+                    if 0 <= selected_index < len(config['sizes']):
+                        selected_size = config['sizes'][selected_index]
                     else:
                         print("Invalid selection. Please choose a valid number.")
                 except ValueError:
@@ -197,4 +204,3 @@ if __name__ == "__main__":
         if continue_choice == 'n':
             print("Exiting program. Goodbye!")
             break
-
