@@ -35,18 +35,26 @@ def generate_and_save_data(config, selected_distribution_name, selected_size=Non
         dist_dir = os.path.join(output_dir, selected_distribution_name)
         if not os.path.exists(dist_dir):
             os.makedirs(dist_dir)
-
-        # Handle correlated_gaussian_rv: Create a subdirectory for the correlation value
+            
+        #Handle correlated_gaussian_rv: Create a subdirectory for the correlation value
         if selected_distribution_name == "correlated_gaussian_rv":
             correlation = distribution.get('correlation', 0)  # Retrieve the correlation from the config
             corr_dir = os.path.join(dist_dir, f"corr_{correlation:.2f}")
             if not os.path.exists(corr_dir):
                 os.makedirs(corr_dir)
         else:
-            corr_dir = dist_dir  # Use the distribution directory for other cases
-
+            corr_dir = dist_dir  # Use the distribution directory for other cases    
+            
+            
+        # Add a directory for parameter values
+        param_values = "_".join([f"{key}_{val}" for key, val in params.items()])
+        param_dir = os.path.join(corr_dir, param_values)
+        if not os.path.exists(param_dir):
+            os.makedirs(param_dir)    
+           
+           
         # Create a specific subdirectory for the size
-        size_dir = os.path.join(corr_dir, f"size_{size}")
+        size_dir = os.path.join(param_dir, f"size_{size}")
         if not os.path.exists(size_dir):
             os.makedirs(size_dir)
 
