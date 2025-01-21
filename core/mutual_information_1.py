@@ -46,17 +46,14 @@ def compute_marginal_counts(matrix, epsilon):
     marginal_counts = np.zeros(n_samples)
 
     # Initialize NearestNeighbors with a fixed radius (max epsilon)
-    max_radius = np.max(epsilon) / 2
-    nbrs = NearestNeighbors(radius=max_radius, metric='euclidean', algorithm='ball_tree').fit(matrix)
+    nbrs = NearestNeighbors(radius=np.max(epsilon) / 2, metric='euclidean', algorithm='ball_tree').fit(matrix)
 
-    # Query neighbors within the maximum radius for all points at once
-    distances, _ = nbrs.radius_neighbors(matrix, radius=max_radius)  # MODIFIED: query in batch
-    # Compute marginal counts using the provided epsilon for each point
+    # Query the neighbors within the radius for all points
     for i in range(n_samples):
-        marginal_counts[i] = np.sum(distances[i] <= epsilon[i] / 2) - 1  # Exclude the point itself
-        # MODIFIED: compare with epsilon[i] / 2
+        distances, _ = nbrs.radius_neighbors(matrix[i].reshape(1, -1), radius=epsilon[i] / 2)
+        marginal_counts[i] = len(distances[0]) - 1  # Exclude the point itself
 
-    return marginal_counts
+    return marginal_counts  
 
 @time_it
 def mutual_information_1(dataset, k, n_jobs = 2):

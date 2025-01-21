@@ -117,14 +117,17 @@ def process_and_save_mi_table(file_path, num_bins=10):
 
         # Prepare rows for the CSV
         rows = [["k", "mi_1", "mi_sum", "mi_binning"]]
-        for k in range(1, 31):
+        print('before computing mi')
+        for k in range(1, 3):
             # Compute MI using the three methods
             mi_1 = mutual_information_1(data, k)
             mi_sum = mutual_information_1_entropies_sum(data, k)
-            mi_binning = mutual_information_binningadaptive(data, num_bins)
+            mi_binning = mutual_information_1(data, k)
 
             # Append the results
             rows.append([k, mi_1, mi_sum, mi_binning])
+            
+        print('After for cycle in computng mi')
 
         # Write the results to the CSV file
         with open(output_csv, mode='w', newline='') as file:

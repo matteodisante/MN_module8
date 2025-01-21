@@ -7,8 +7,8 @@ from utils.mutual_information_utils import analyze_and_save_mi_values
 
 def main():
     # Define the input and output directories
-    input_dir = "/home/oem/Desktop/MN_modulo8_dati/MN_modulo8_dati/data/synthetic_data"
-    output_dir = "/home/oem/Desktop/RISULTATI"
+    input_dir = "data/synthetic_data"
+    output_dir = "mi_results"
 
     # Number of bins for mutual information estimation
     num_bins = 10
