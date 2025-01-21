@@ -3,10 +3,18 @@ import shutil
 import numpy as np
 
 
-
 def load_data(file_path):
-    """Carica i dati da un file .txt con due colonne."""
-    return np.loadtxt(file_path, delimiter=',')  # Assumiamo tab come separatore
+    """Carica i dati da un file .txt, tentando automaticamente di determinare il delimitatore."""
+    with open(file_path, 'r') as file:
+        # Leggi la prima riga per determinare il delimitatore
+        first_line = file.readline()
+        if ',' in first_line:
+            delimiter = ','
+        elif '\t' in first_line:
+            delimiter = '\t'
+        else:
+            delimiter = ' '  # Default: spazio
+    return np.loadtxt(file_path, delimiter=delimiter)
 
 
 def save_results(results, file_path):
