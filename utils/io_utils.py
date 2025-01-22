@@ -1,7 +1,11 @@
 import os
 import shutil 
 import numpy as np
+import pandas as pd
 
+
+def load_data_csv(file_path, delimiter=','):
+    return pd.read_csv(file_path, delimiter=delimiter)
 
 def load_data(file_path):
     """Carica i dati da un file .txt, tentando automaticamente di determinare il delimitatore."""
