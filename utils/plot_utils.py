@@ -1,10 +1,11 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import seaborn as sns
 import scipy.stats as stats
 
-
+from io_utils import ensure_directory_and_handle_file_conflicts, load_data_csv
 
 
 def plot_histograms(series1, series2, bins):
@@ -88,6 +89,79 @@ def plot_marginals(samples, output_path):
     plt.tight_layout()
     plt.savefig(output_path)
     plt.close()
+    
+    
+    
+    
+
+
+def generate_plot(
+    file_paths, x_col, y_col, yerr_col, title, xlabel, ylabel, output_dir, 
+    combine=False, theoretical_value=0, k_or_bins=None, x_transform=None
+):
+    """
+    Generates plots for the provided datasets based on the configuration.
+
+    Parameters:
+        file_paths (list of str): Paths to the CSV files.
+        x_col (str): Column name for x-axis.
+        y_col (str): Column name for y-axis.
+        yerr_col (str): Column name for error on y-axis.
+        title (str): Plot title.
+        xlabel (str): X-axis label.
+        ylabel (str): Y-axis label.
+        output_dir (str): Directory to save the plots.
+        combine (bool): Whether to combine multiple curves in one plot.
+        theoretical_value (float): Theoretical value to subtract from y_col.
+        k_or_bins (list of int): Selected k or bins_number values.
+        x_transform (callable): Optional transformation for x-axis values.
+    """
+    plt.style.use('seaborn-v0_8-darkgrid')
+
+    # Group files by distribution and parameters
+    grouped_files = {}
+    for file in file_paths:
+        distribution_key = '_'.join(os.path.basename(file).split('_')[2:-1])
+        grouped_files.setdefault(distribution_key, []).append(file)
+
+    for k_or_bin in k_or_bins:
+        plt.figure(figsize=(10, 6))
+
+        for group, files in grouped_files.items():
+            curve_x, curve_y, curve_yerr = [], [], []
+
+            for file in files:
+                data = load_data_csv(file)
+                if not all(col in data.columns for col in [x_col, y_col, yerr_col]):
+                    print(f"[WARNING] Skipping file {file}: required columns missing.")
+                    continue
+
+                filtered_data = data[data[x_col] == k_or_bin]
+                if filtered_data.empty:
+                    print(f"[WARNING] Skipping {file}: k_or_bin {k_or_bin} not found in {x_col}.")
+                    continue
+
+                size = int(os.path.basename(file).split('_')[-1].replace('.csv', '').replace('size', ''))
+                x_value = size if x_transform is None else x_transform(size)
+                curve_x.append(x_value)
+                curve_y.append(filtered_data[y_col].values[0] - theoretical_value)
+                curve_yerr.append(filtered_data[yerr_col].values[0])
+
+            sorted_indices = np.argsort(curve_x)
+            curve_x, curve_y, curve_yerr = np.array(curve_x)[sorted_indices], np.array(curve_y)[sorted_indices], np.array(curve_yerr)[sorted_indices]
+
+            plt.errorbar(curve_x, curve_y, yerr=curve_yerr, fmt="o", capsize=4, label=f"{group}")
+
+        plt.legend(loc='upper right', fontsize=9, frameon=True, edgecolor="black")
+        plt.title(f"{title} (k = {k_or_bin})", fontsize=14, fontweight='bold')
+        plt.xlabel(xlabel, fontsize=12)
+        plt.ylabel(ylabel, fontsize=12)
+        plt.grid(True, linestyle='--', alpha=0.7)
+
+        combined_dir = os.path.join(output_dir, "combined", title.replace(' ', '_'), f"k_{k_or_bin}")
+        ensure_directory_and_handle_file_conflicts(combined_dir)
+        plt.savefig(os.path.join(combined_dir, f"figure_{title.replace(' ', '_')}_k{k_or_bin}.png"), dpi=300, bbox_inches='tight')
+        plt.close()
     
 
     

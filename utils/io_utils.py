@@ -5,7 +5,12 @@ import pandas as pd
 
 
 def load_data_csv(file_path, delimiter=','):
-    return pd.read_csv(file_path, delimiter=delimiter)
+    try:
+        return pd.read_csv(file_path, delimiter=delimiter)
+    except Exception as e:
+        print(f"[ERROR] Could not load file {file_path}: {e}")
+        return None
+    
 
 def load_data(file_path):
     """Carica i dati da un file .txt, tentando automaticamente di determinare il delimitatore."""
@@ -19,6 +24,7 @@ def load_data(file_path):
         else:
             delimiter = ' '  # Default: spazio
     return np.loadtxt(file_path, delimiter=delimiter)
+
 
 
 def save_results(results, file_path):
@@ -60,6 +66,36 @@ def ensure_directory(dir_path):
         print(f"Directory '{dir_path}' has been created.")
     return True
     
+    
+    
+def ensure_directory_and_handle_file_conflicts(dir_path, file_name=None):
+    """
+    Ensure the target directory exists and handle conflicts if a file with the same name exists.
+
+    Parameters:
+        dir_path (str): Path to the directory to ensure exists.
+        file_name (str, optional): Name of the file to check for conflicts. If provided,
+                                   the function checks if the file exists and prompts the user
+                                   to decide whether to overwrite it.
+
+    Returns:
+        bool: True if the directory is prepared and the user wants to proceed (or no conflicts exist),
+              False otherwise.
+    """
+    # Create the directory if it doesn't exist
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+        print(f"Directory '{dir_path}' has been created.")
+    
+    # If a file name is provided, check for conflicts
+    if file_name:
+        file_path = os.path.join(dir_path, file_name)
+        if os.path.exists(file_path):
+            response = input(f"File '{file_path}' already exists. Do you want to overwrite it? (yes/no): ").strip().lower()
+            if response != 'yes':
+                print(f"Operation cancelled for file: {file_path}")
+                return False
+    return True
     
 
     

@@ -1,4 +1,6 @@
 import os
+import sys
+
 
 def navigate_directories(start_path=".", multi_select=False, file_extension=".bin"):
     """
@@ -86,3 +88,39 @@ def navigate_directories(start_path=".", multi_select=False, file_extension=".bi
             print("[ERROR] Invalid command.")
 
     return selected_paths
+    
+
+
+
+def user_select_mi_types():
+    mi_types = {"1": ("k", "mean_mi_1", "sigma_mi_1"), "2": ("k", "mean_mi_sum", "sigma_mi_sum"), "3": ("bins_number", "mean_mi_binning", "sigma_mi_binning")}
+    print("\nSelect MI types to use:")
+    for key, desc in mi_types.items():
+        print(f"  {key}. {desc[1]}")
+    selected = input("Enter MI type numbers separated by commas (e.g., 1,2): ").strip().split(',')
+    return [mi_types[key.strip()] for key in selected if key.strip() in mi_types]
+
+
+
+def user_select_figures():
+    figures = {"2": "Figure 2", "4": "Figure 4", "6": "Figure 6"}
+    print("\nSelect figures to generate:")
+    for key, desc in figures.items():
+        print(f"  {key}. {desc}")
+    selected = input("Enter figure numbers separated by commas (e.g., 2,4): ").strip().split(',')
+    return [int(key.strip()) for key in selected if key.strip() in figures]
+
+
+
+def user_select_combination():
+    return input("\nDo you want to combine all selected CSVs into a single plot? (yes/no): ").strip().lower() == "yes"
+
+
+
+def user_select_k_or_bins():
+    values = input("Enter the values of k (or bins_number for mi_binning), separated by commas: ").strip()
+    try:
+        return [int(value.strip()) for value in values.split(",")]
+    except ValueError:
+        print("[ERROR] Invalid input. Please enter valid integers separated by commas.")
+        sys.exit(0)
