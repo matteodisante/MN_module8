@@ -55,12 +55,24 @@ def ensure_directory(dir_path):
         os.makedirs(dir_path)
         print(f"Directory '{dir_path}' has been created.")
     return True
-    
-    
 
-    
-    
+
+
 def save_data(data, file_path):
     ensure_directory(os.path.dirname(file_path))
     np.savetxt(file_path, data, delimiter=',')
     print(f"Dati salvati in: {file_path}")
+
+
+
+def save_transformed_file(file_path, transformed_data):
+    """
+    Saves the transformed data to a new file or overwrite the original.
+    
+    :param file_path: Path to save the transformed file.
+    :param transformed_data: Transformed file data.
+    """
+    with open(file_path, 'w') as file:
+        for line in transformed_data:
+            file.write(line + "\n")
+
