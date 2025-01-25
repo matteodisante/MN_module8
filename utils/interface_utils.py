@@ -1,4 +1,5 @@
 import os
+import logging
 
 def navigate_directories(start_path=".", multi_select=False, file_extension=".bin"):
     """
@@ -86,3 +87,55 @@ def navigate_directories(start_path=".", multi_select=False, file_extension=".bi
             print("[ERROR] Invalid command.")
 
     return selected_paths
+
+
+
+def parse_k_values(k_input):
+    """
+    Parse a string input for k values and ranges into a sorted list of unique integers.
+    Input format example: "1-15,17,30-35,45"
+
+    :param k_input: String containing k ranges and values.
+    :return: Sorted list of unique k values with overlapping values removed.
+    """
+    k_values = set()
+    try:
+        ranges = []
+        singles = set()
+
+        parts = k_input.split(',')
+        for part in parts:
+            part = part.strip()
+            if '-' in part:  # Range
+                k_min, k_max = map(int, part.split('-'))
+                if k_min <= 0 or k_max <= 0 or k_min > k_max:
+                    raise ValueError(f"Invalid range: {part}")
+                ranges.append(range(k_min, k_max + 1))
+            else:  # Single value
+                k = int(part)
+                if k <= 0:
+                    raise ValueError(f"Invalid value: {part}")
+                singles.add(k)
+
+        # Expand ranges and remove overlaps
+        for r in ranges:
+            k_values.update(r)
+        k_values.update(singles)
+
+        return sorted(k_values)
+    except Exception as e:
+        raise ValueError(f"Error parsing k values: {e}")
+
+
+
+# Logging setup function
+def setup_logging():
+    log_filename = "mi_analysis.log"
+    logging.basicConfig(
+        level=logging.DEBUG,  # Log all messages from DEBUG level onwards
+        format="%(asctime)s - %(levelname)s - %(message)s",  # Log format
+        handlers=[
+            logging.FileHandler(log_filename),  # Write logs to a file
+            logging.StreamHandler()  # Optionally, write logs to the console
+        ]
+    )
