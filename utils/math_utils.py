@@ -2,6 +2,7 @@ import numpy as np
 from scipy.stats import kurtosis, skew
 from functools import partial
 from scipy.special import digamma
+import math
 
 
 def correlate_data(independent_series, correlation):
@@ -128,3 +129,33 @@ def gamma_exponential_mi_theoretical(u):
         raise ValueError("The parameter u must be greater than 0.")
     mi_exact = digamma(u + 1) - np.log(u)
     return mi_exact
+
+
+
+def transform_to_bilog_scale(file_path):
+    """
+    Applies a logarithmic transformation to a `.txt` file (log base 10).
+    
+    :param file_path: Path to the input file.
+    :return: A list of transformed rows.
+    """
+    transformed_rows = []
+    
+    with open(file_path, 'r') as file:
+        for line in file:
+            # Assuming the file has rows of space-separated values
+            values = line.strip().split()
+            transformed_values = []
+            for value in values:
+                try:
+                    value = float(value)
+                    if value > 0:
+                        transformed_values.append(str(math.log10(value)))  # log base 10
+                    else:
+                        # Handle non-positive values (e.g., setting to a small positive number or skipping)
+                        transformed_values.append('0')  # Or set to some small number like '1e-5'
+                except ValueError:
+                    transformed_values.append(value)  # Preserve non-numeric values (e.g., headers)
+            transformed_rows.append(" ".join(transformed_values))
+    
+    return transformed_rows
