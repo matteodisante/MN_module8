@@ -1,21 +1,19 @@
 import sys
 import os
 import numpy as np
-import shutil
 import csv
-from concurrent.futures import ProcessPoolExecutor
-from functools import partial
-import pandas as pd
-import glob
+import logging
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../utils/')))
-from io_utils import load_data
-from interface_utils import navigate_directories
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '/utils/')))
+from utils.io_utils import load_data
+from utils.interface_utils import navigate_directories
+from utils.decorators import time_it
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../core/')))
-from mutual_information_1 import *
-from mutual_information_1_entropies_sum import *
-from mutual_information_binning import *
+from core.mutual_information_1 import mutual_information_1
+from core.mutual_information_1_entropies_sum import mutual_information_1_entropies_sum
+from core.mutual_information_binning import mutual_information_binning
+
 
 
 def compute_std_corr_matrix(data):
@@ -36,8 +34,6 @@ def compute_std_corr_matrix(data):
 
 
 
-# Functions that compute the mi estimate for a single file and for a directory.
-
 def process_file(file_path, k, mi_estimate):
     """
     Process a single file to compute mutual information.
@@ -48,15 +44,23 @@ def process_file(file_path, k, mi_estimate):
     :return: The mutual information value.
     """
     try:
+        logging.info(f"Starting to process file: {file_path} with k={k}")
+
         # Load data from the file
         data = load_data(file_path)
+
+        if data is None:
+            logging.error(f"Failed to load data from {file_path}. Skipping processing.")
+            return None
 
         # Compute mutual information
         mi = mi_estimate(data, k)
 
+        logging.info(f"Computed MI for file: {file_path} with k={k} is {mi}")
+
         return mi
     except Exception as e:
-        print(f"Error processing {file_path}: {e}")
+        logging.error(f"Error processing {file_path} with k={k}: {e}")
         return None
 
 
@@ -64,212 +68,288 @@ def process_file(file_path, k, mi_estimate):
 def extract_file_details(file_path):
     """
     Extracts distribution name, size, parameters, and file index from a given file path.
-
-    :param file_path: Path to the file.
-    :return: A dictionary with distribution_name, size, params, and file_index.
-    """
-    base_name = os.path.basename(file_path)
-    dir_name = os.path.dirname(file_path)
-
-    # Extract file index from the file name
-    file_index = base_name.split('.')[0]
-
-    # Extract size from the directory "size_*"
-    size_dir = [part for part in dir_name.split(os.sep) if part.startswith("size_")]
-    size = size_dir[0].split('_')[1] if size_dir else "unknown"
-
-    # Extract parameters from directories above "size_*"
-    dir_parts = dir_name.split(os.sep)
-    size_index = dir_parts.index(size_dir[0]) if size_dir else len(dir_parts)
-    params = '_'.join(dir_parts[size_index - 2:size_index]) if size_index > 1 else "default"
-
-    # Extract distribution name (the directory before params)
-    distribution_name = dir_parts[size_index - 3] if size_index > 2 else "unknown"
-
-    return {
-        "distribution_name": distribution_name,
-        "size": size,
-        "params": params,
-        "file_index": file_index
-    }
-
-def process_and_save_mi_table(file_path, num_bins=10):
-    """
-    Process a dataset file and save mutual information calculations to a CSV file.
-
-    :param file_path: Path to the input dataset file.
-    :param num_bins: Number of bins for the adaptive binning MI calculation.
-    :return: Path to the generated CSV file.
     """
     try:
+        logging.info(f"Extracting details from file path: {file_path}")
+
+        base_name = os.path.basename(file_path)
+        dir_name = os.path.dirname(file_path)
+
+        # Extract file index from the file name
+        file_index = base_name.split('.')[0]
+
+        # Check if the directory path includes "size_*" and other relevant parts
+        dir_parts = dir_name.split(os.sep)
+
+        # Initialize variables as None
+        size = None
+        params = None
+        distribution_name = None
+
+        # Check if the path includes size-related or parameter-related information
+        for i, part in enumerate(dir_parts):
+            if part.startswith("size_"):
+                size = part.split('_')[1]
+                if i > 0:
+                    params = dir_parts[i-1]
+                if i > 1:
+                    distribution_name = dir_parts[i-2]
+
+        # If no relevant directories, default to None for all parameters
+        if size is None and len(dir_parts) >= 2:
+            distribution_name = dir_parts[-2]
+
+        # Only include keys if they are found
+        details = {
+            "distribution_name": distribution_name,
+            "size": size,
+            "params": params,
+            "file_index": file_index
+        }
+
+        logging.info(f"Extracted details: {details}")
+        return details
+
+    except Exception as e:
+        logging.error(f"Error extracting details from file path {file_path}: {e}")
+        return None
+
+
+
+@time_it
+def process_and_save_mi_table(file_path, output_dir, k_values, num_bins=10, mi_estimate_function=None):
+    """
+    Process a dataset file and save mutual information calculations to a CSV file.
+    """
+    try:
+        if mi_estimate_function is None:
+            raise ValueError("mi_estimate_function cannot be None. Provide a valid MI estimation function.")
+
+        logging.info(f"Started processing file: {file_path}")
+
+        # Map function to column name
+        mi_estimate_map = {
+            mutual_information_1: "mi_1",
+            mutual_information_1_entropies_sum: "mi_sum",
+            mutual_information_binning: "mi_binning"
+        }
+
+        if mi_estimate_function not in mi_estimate_map:
+            raise ValueError("Invalid mi_estimate_function. Choose from mutual_information_1, mutual_information_1_entropies_sum, or mutual_information_binning.")
+
+        mi_estimate = mi_estimate_map[mi_estimate_function]
+
         # Extract details from the file path
         details = extract_file_details(file_path)
-        distribution_name = details["distribution_name"]
-        size = details["size"]
-        params = details["params"]
-        file_index = details["file_index"]
+        distribution_name = details.get("distribution_name", None)
+        size = details.get("size", None)
+        params = details.get("params", None)
+        file_index = details.get("file_index", None)
 
-        # Prepare output CSV file name
-        output_csv = f"mi_{distribution_name}_size_{size}_params_{params}_file_{file_index}.csv"
+        # Build the relative path based on input file structure
+        relative_output_path_parts = []
+
+        if distribution_name is not None:
+            relative_output_path_parts.append(distribution_name)
+        if size is not None:
+            relative_output_path_parts.append(f"size_{size}")
+        if params is not None:
+            relative_output_path_parts.append(f"params_{params}")
+
+        # Join parts to create the relative output path
+        relative_output_path = os.path.join(*relative_output_path_parts)
+
+        # Build the output CSV file name
+        if distribution_name or size or params:
+            output_csv_name = f"{mi_estimate}_{distribution_name if distribution_name else ''}{f'_N{size}' if size else ''}{f'_{params}' if params else ''}_{file_index}.csv"
+        else:
+            output_csv_name = f"{mi_estimate}_{file_index}.csv"
+
+        # Full path to the output file
+        full_output_path = os.path.join(output_dir, relative_output_path)
+        output_csv = os.path.join(full_output_path, output_csv_name)
+
+        # Create necessary directories if they don't exist
+        os.makedirs(full_output_path, exist_ok=True)
+
+        # Check for existing files
+        existing_files = navigate_directories(
+            start_path=output_dir,
+            multi_select=True,
+            file_extension=".csv"
+        )
+        matched_files = [file for file in existing_files if file.endswith(output_csv_name)]
+
+        if matched_files:
+            logging.warning(f"Found existing file(s) with the name '{output_csv_name}':")
+            for file in matched_files:
+                logging.warning(f"  - {file}")
+
+            overwrite = input(f"Do you want to overwrite the existing file(s)? [y/n]: ").strip().lower()
+            if overwrite != "y":
+                logging.info(f"File not overwritten, returning existing file: {matched_files[0]}")
+                return matched_files[0]
 
         # Load the dataset
         data = load_data(file_path)
 
         # Prepare rows for the CSV
-        rows = [["k", "mi_1", "mi_sum", "mi_binning"]]
-        print('before computing mi')
-        for k in range(1, 3):
-            # Compute MI using the three methods
-            mi_1 = mutual_information_1(data, k)
-            mi_sum = mutual_information_1_entropies_sum(data, k)
-            mi_binning = mutual_information_1(data, k)
+        rows = [["k", mi_estimate]]
+        for k in k_values:
+            # Compute MI using the selected function
+            if mi_estimate_function == mutual_information_binning:
+                mi_value = mi_estimate_function(data, num_bins)
+            else:
+                mi_value = mi_estimate_function(data, k)
 
-            # Append the results
-            rows.append([k, mi_1, mi_sum, mi_binning])
-            
-        print('After for cycle in computng mi')
+            rows.append([k, mi_value])
 
         # Write the results to the CSV file
-        with open(output_csv, mode='w', newline='') as file:
+        with open(output_csv, mode="w", newline="") as file:
             writer = csv.writer(file)
             writer.writerows(rows)
 
-        print(f"Mutual information results saved to: {output_csv}")
+        logging.info(f"Mutual information results saved to: {output_csv}")
         return output_csv
 
     except Exception as e:
-        print(f"Error processing file {file_path}: {e}")
+        logging.error(f"Error processing file {file_path}: {e}")
         return None
 
 
-def create_summary_csv_for_folder(folder_path):
-    """
-    Create a summary CSV file for all CSVs in a given folder. Computes the mean and standard deviation
-    of the mutual information values for each k and saves the summary in the same folder.
 
-    :param folder_path: Path to the folder containing the CSV files.
+@time_it
+def aggregate_mi_results(base_dir, output_dir, mi_estimate_functions, k_values):
+    """
+    Aggregates mutual information results from detailed CSV files and updates summary aggregation CSVs.
+
+    :param base_dir: Path to the directory containing the processed MI CSV files.
+    :param output_dir: Path to the directory where the summary CSVs will be saved.
+    :param mi_estimate_functions: List of mutual information estimation functions to consider.
+    :param k_values: List or range of k values to include in the aggregation.
     """
     try:
-        # Find all CSV files in the folder
-        csv_files = glob.glob(os.path.join(folder_path, "*.csv"))
-        if not csv_files:
-            print(f"[INFO] No CSV files found in folder: {folder_path}")
-            return
+        # Set up logging
+        logging.basicConfig(level=logging.INFO)
+        
+        logging.info("Started aggregating mutual information results.")
 
-        # Initialize storage for data
-        mi_1_values = []
-        mi_sum_values = []
-        mi_binning_values = []
+        # Map MI functions to column names
+        mi_estimate_map = {
+            mutual_information_1: "mi_1",
+            mutual_information_1_entropies_sum: "mi_sum",
+            mutual_information_binning: "mi_binning"
+        }
 
-        # Loop through each CSV file and extract data
+        # Filter only selected MI estimation functions
+        selected_columns = [mi_estimate_map[func] for func in mi_estimate_functions if func in mi_estimate_map]
+        logging.info(f"Selected MI functions: {selected_columns}")
+
+        # Get all CSV files in the base directory
+        csv_files = navigate_directories(
+            start_path=base_dir,
+            multi_select=True,
+            file_extension=".csv"
+        )
+        logging.info(f"Found {len(csv_files)} CSV files in the base directory.")
+
+        # Group files by distribution, size, params, and MI estimate
+        grouped_files = {}
         for csv_file in csv_files:
-            try:
-                # Read the CSV file into a pandas DataFrame
-                df = pd.read_csv(csv_file)
-
-                # Append values for each k
-                mi_1_values.append(df["mi_1"].to_numpy())
-                mi_sum_values.append(df["mi_sum"].to_numpy())
-                mi_binning_values.append(df["mi_binning"].to_numpy())
-            except Exception as e:
-                print(f"[ERROR] Failed to process {csv_file}: {e}")
+            if "_file_" not in os.path.basename(csv_file):
                 continue
 
-        # Convert the collected values into numpy arrays
-        mi_1_values = np.array(mi_1_values)
-        mi_sum_values = np.array(mi_sum_values)
-        mi_binning_values = np.array(mi_binning_values)
+            details = extract_file_details(csv_file)
+            distribution = details["distribution_name"] or "unknown"
+            size = details["size"] or "unknown"
+            params = details["params"] or "default"
+            mi_estimate = None
 
-        # Calculate means and standard deviations for each k
-        k_values = np.arange(1, 31)
-        mean_mi_1 = np.mean(mi_1_values, axis=0)
-        sigma_mi_1 = np.std(mi_1_values, axis=0)
-        mean_mi_sum = np.mean(mi_sum_values, axis=0)
-        sigma_mi_sum = np.std(mi_sum_values, axis=0)
-        mean_mi_binning = np.mean(mi_binning_values, axis=0)
-        sigma_mi_binning = np.std(mi_binning_values, axis=0)
+            for estimate, column_name in mi_estimate_map.items():
+                if column_name in csv_file and column_name in selected_columns:
+                    mi_estimate = column_name
+                    break
 
-        # Prepare the summary DataFrame
-        summary_df = pd.DataFrame({
-            "k": k_values,
-            "mean_mi_1": mean_mi_1,
-            "sigma_mi_1": sigma_mi_1,
-            "mean_mi_sum": mean_mi_sum,
-            "sigma_mi_sum": sigma_mi_sum,
-            "mean_mi_binning": mean_mi_binning,
-            "sigma_mi_binning": sigma_mi_binning,
-        })
+            if mi_estimate:
+                key = (distribution, size, params, mi_estimate)
+                if key not in grouped_files:
+                    grouped_files[key] = []
+                grouped_files[key].append(csv_file)
 
-        # Extract distribution, size, and params info from folder path
-        folder_name = os.path.basename(folder_path)
-        parent_folder = os.path.basename(os.path.dirname(folder_path))
-        grandparent_folder = os.path.basename(os.path.dirname(os.path.dirname(folder_path)))
+        logging.info(f"Grouped files by distribution, size, params, and MI estimate.")
 
-        # Build the output file name
-        summary_csv_name = f"mi_{grandparent_folder}_{parent_folder}_{folder_name}_mean_error.csv"
-        summary_csv_path = os.path.join(folder_path, summary_csv_name)
+        # Process each group
+        for (distribution, size, params, mi_estimate), files in grouped_files.items():
+            # Build the relative output path for each group
+            if distribution == "unknown" and size == "unknown" and params == "default":
+                relative_output_path = ""
+                output_csv_name = f"{mi_estimate}.csv"  # Simplified file name if all are unknown
+            else:
+                relative_output_path = os.path.join(
+                    distribution if distribution != "unknown" else "",
+                    f"size_{size}" if size != "unknown" else "",
+                    f"params_{params}" if params != "default" else ""
+                )
+                # Exclude 'unknown' or 'default' from file name if not present
+                output_csv_name = f"{mi_estimate}_{distribution}_N{size}_{params}.csv"
+                output_csv_name = output_csv_name.replace("_unknown", "").replace("_default", "").replace("Nunknown", "").replace("params_default", "")
 
-        # Save the summary to a CSV file
-        summary_df.to_csv(summary_csv_path, index=False)
+            full_output_path = os.path.join(output_dir, relative_output_path)
+            os.makedirs(full_output_path, exist_ok=True)
+            output_file = os.path.join(full_output_path, output_csv_name)
 
-        print(f"[INFO] Summary CSV saved: {summary_csv_path}")
+            logging.info(f"Processing group: {distribution}, {size}, {params}, {mi_estimate}")
+
+            aggregated_data = {}
+            if os.path.exists(output_file):
+                with open(output_file, mode="r") as existing_csv:
+                    reader = csv.reader(existing_csv)
+                    next(reader)
+                    for row in reader:
+                        k = int(row[0])
+                        mean_value = float(row[1])
+                        sigma_value = float(row[2])
+                        aggregated_data[k] = {"mean": mean_value, "sigma": sigma_value, "values": []}
+
+            # Aggregating data by k
+            data_by_k = {}
+            for file in files:
+                with open(file, mode="r") as csv_file:
+                    reader = csv.reader(csv_file)
+                    next(reader)
+                    for row in reader:
+                        k = int(row[0])
+                        value = float(row[1])
+                        if k not in k_values:  # Skip values not in specified k_values
+                            continue
+                        if k not in data_by_k:
+                            data_by_k[k] = []
+                        data_by_k[k].append(value)
+
+            # Update aggregated data with new values
+            for k, values in data_by_k.items():
+                if k not in aggregated_data:
+                    aggregated_data[k] = {"mean": 0, "sigma": 0, "values": []}
+                aggregated_data[k]["values"].extend(values)
+
+            # Prepare final aggregated data
+            final_data = [["k", f"mean_{mi_estimate}", f"sigma_{mi_estimate}"]]
+            for k, stats in sorted(aggregated_data.items()):
+                all_values = stats["values"]
+                if all_values:  # Only recompute for k in specified range or updated data
+                    mean_value = sum(all_values) / len(all_values)
+                    sigma_value = (sum((x - mean_value) ** 2 for x in all_values) / len(all_values)) ** 0.5
+                else:  # Keep existing values for k outside the range
+                    mean_value = stats["mean"]
+                    sigma_value = stats["sigma"]
+                final_data.append([k, mean_value, sigma_value])
+
+            # Write the final aggregated results
+            with open(output_file, mode="w", newline="") as csv_file:
+                writer = csv.writer(csv_file)
+                writer.writerows(final_data)
+
+            logging.info(f"Updated summary results saved to: {output_file}")
+
     except Exception as e:
-        print(f"[ERROR] Failed to create summary CSV for folder {folder_path}: {e}")
-
-
-def analyze_and_save_mi_values(input_dir, output_dir, num_bins=10):
-    """
-    Analyze .txt files in the input directory, compute mutual information, and save results
-    in a structured output directory.
-
-    :param input_dir: Path to the input directory containing .txt files.
-    :param output_dir: Path to the output directory where results will be saved.
-    :param num_bins: Number of bins for the adaptive binning MI calculation.
-    """
-    # Step 1: Navigate and select files
-    selected_files = navigate_directories(start_path=input_dir, multi_select=True, file_extension=".txt")
-
-    if not selected_files:
-        print("[INFO] No files selected. Exiting.")
-        return
-
-    # Step 2: Create the output directory structure
-    mi_values_dir = os.path.join(output_dir, "mi_values")
-    os.makedirs(mi_values_dir, exist_ok=True)
-
-    # Step 3: Process each file and save the results
-    for file_path in selected_files:
-        try:
-            # Extract details from the file path
-            details = extract_file_details(file_path)
-            distribution_name = details["distribution_name"]
-            size = details["size"]
-            params = details["params"]
-
-            # Build the output subdirectory structure
-            subfolder_path = os.path.join(
-                mi_values_dir,
-                distribution_name,
-                params,
-                f"size_{size}"
-            )
-            os.makedirs(subfolder_path, exist_ok=True)
-
-            # Process the file and save the CSV in the corresponding subfolder
-            output_csv = process_and_save_mi_table(file_path, num_bins=num_bins)
-
-            if output_csv:
-                # Move the generated CSV to the corresponding subfolder
-                output_csv_name = os.path.basename(output_csv)
-                shutil.move(output_csv, os.path.join(subfolder_path, output_csv_name))
-
-        except Exception as e:
-            print(f"[ERROR] Failed to process file {file_path}: {e}")
-
-    # Step 4: Create summary CSVs for each folder
-    for root, dirs, files in os.walk(mi_values_dir):
-        for dir_name in dirs:
-            folder_path = os.path.join(root, dir_name)
-            create_summary_csv_for_folder(folder_path)
-
-    print(f"[INFO] Analysis completed. Results saved in: {mi_values_dir}")
+        logging.error(f"Error during aggregation or update: {e}")
