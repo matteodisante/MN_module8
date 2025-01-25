@@ -79,7 +79,7 @@ def main():
             return
 
     # Use navigate_directories to select files or directories
-    selected_files = navigate_directories(start_path=input_dir, multi_select=True, file_extension=".csv")
+    selected_files = navigate_directories(start_path=input_dir, multi_select=True, file_extension=".txt")
 
     if not selected_files:
         print("No files selected. Exiting.")
