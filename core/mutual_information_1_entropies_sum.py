@@ -2,29 +2,11 @@ import os
 import sys
 import numpy as np
 from scipy.special import digamma
-from sklearn.neighbors import NearestNeighbors
 
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../utils')))
-from decorators import time_it
-
-
-def find_k_nearest_neighbors(matrix, k):
-    """
-    Finds the k-nearest neighbors for each point in a dataset based on the max metric.
-
-    Parameters:
-        matrix (2D array-like): Input data where each row is a point and each column is a coordinate.
-        k (int): Number of nearest neighbors to find for each point.
-
-    Returns:
-        indices (2D array): Indices of the k-nearest neighbors for each point.
-        distances (2D array): Distances to the k-nearest neighbors for each point.
-    """
-    # Use sklearn's NearestNeighbors with the Chebyshev (max) metric
-    nbrs = NearestNeighbors(n_neighbors=k+1, metric='chebyshev').fit(matrix)
-    distances, indices = nbrs.kneighbors(matrix)
-    return indices[:, 1:], distances[:, 1:]  # Remove self-neighbor
+from utils.decorators import time_it
+from utils.core_utils import find_k_nearest_neighbors
 
 
 @time_it
