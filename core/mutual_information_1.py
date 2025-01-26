@@ -58,7 +58,6 @@ def compute_marginal_counts(matrix, epsilon):
 
     return marginal_counts
 
-@time_it
 def mutual_information_1(dataset, k, n_jobs = 2):
 
 	"""
