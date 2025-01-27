@@ -9,7 +9,7 @@ from utils.decorators import time_it
 from utils.core_utils import find_k_nearest_neighbors
 
 
-@time_it
+
 def mutual_information_1_entropies_sum(dataset, k):
 
 	"""

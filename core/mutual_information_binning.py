@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../u
 from utils.decorators import time_it
 
 
-@time_it
+
 def mutual_information_binning(data, num_bins):
     """
     Estimate mutual information using binning.
@@ -53,8 +53,8 @@ def mutual_information_binning(data, num_bins):
     return mi
 
 
-@time_it
-def mutual_information_binningadaptive(data, num_bins):
+
+def mutual_information_binning_adaptive(data, num_bins):
     """
     Estimate mutual information using adaptive binning and first-order correction.
 

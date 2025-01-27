@@ -9,7 +9,7 @@ from utils.decorators import time_it
 from utils.core_utils import find_k_nearest_neighbors, compute_marginal_counts
 
 
-@time_it
+
 def mutual_information_1(dataset, k, n_jobs = 2):
 
 	"""
