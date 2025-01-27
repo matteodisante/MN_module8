@@ -26,7 +26,6 @@ def find_k_nearest_neighbors(matrix, k):
     distances, indices = nbrs.kneighbors(matrix)
     return indices[:, 1:], distances[:, 1:]  # Remove self-neighbor
 
-@time_it
 def compute_marginal_counts(matrix, epsilon):
     """
     Computes the marginal counts for a single variable (1D) using NearestNeighbors for efficiency.
