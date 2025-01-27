@@ -66,14 +66,14 @@ def real_data_processing_1(data_dict, name_dict, n, h, k):
         while (i*h + n) <= len(data_array):
             i+=1
         i_max = i # actually we are interested in i-1, but for the subquent for cycle is reasonable to save i_max=i
-        print(f'number of windows for {name} = {i_max}')
+        print(f'\nNumber of windows for {name} = {i_max}')
 
         # mi computation
         start = time.time()
         for j in range(i_max): # j=0,...,i_max-1
             mi_list.append(mutual_information_1(data_array[j*h: (j*h + n)], k=k)) # compute mi for each window
         end = time.time() - start
-        print(f'run time for {name}= {end/60} min')
+        print(f'Run time for {name}= {end/60} min')
 
     mi_array = np.array(mi_list)
     directory_path = f'data/real_data/n_{n}/h_{h}/k_{k}/{name_dict}'

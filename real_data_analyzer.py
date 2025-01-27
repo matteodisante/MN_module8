@@ -53,7 +53,7 @@ if __name__ == "__main__":
     plt.ylabel('density', size=15)
     plt.xlabel('MI', size=15)
     # choose the file name
-    plt.savefig('test.pdf')
+    # plt.savefig('test.pdf')
     plt.show()
 
     # Two-sample Kolmogorov-Smirnov test
