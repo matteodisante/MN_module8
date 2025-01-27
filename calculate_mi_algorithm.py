@@ -1,15 +1,28 @@
 import os
-from multiprocessing import Pool
+from pathos.multiprocessing import ProcessingPool as Pool  # Usa pathos per evitare problemi di pickle
 
 
 from utils.mutual_information_utils import process_and_save_mi_table, aggregate_mi_results
 from utils.interface_utils import navigate_directories, parse_k_values, setup_logging
 from utils.io_utils import save_transformed_file
 from utils.math_utils import transform_to_bilog_scale
+
 from core.mutual_information_1 import mutual_information_1
 from core.mutual_information_1_entropies_sum import mutual_information_1_entropies_sum
 from core.mutual_information_binning import mutual_information_binning
 
+
+
+def process_single_file_wrapper(args):
+    file_path, selected_functions, output_dir, k_values, num_bins = args
+    for mi_func in selected_functions:
+        process_and_save_mi_table(
+            file_path=file_path,
+            output_dir=output_dir,
+            k_values=k_values,
+            mi_estimate_function=mi_func,
+            num_bins=num_bins if mi_func == mutual_information_binning else None,  # Only pass num_bins for binning
+        )
 
 
 def main():
@@ -55,7 +68,7 @@ def main():
     print("Select the MI estimation functions to use:")
     print("1: mutual_information_1")
     print("2: mutual_information_1_entropies_sum")
-    print("3: mutual_information_binningadaptive")
+    print("3: mutual_information_binning")
     selected_functions = input("Enter the numbers corresponding to the desired functions (comma-separated): ").strip()
     try:
         selected_functions = [mi_functions_map[num.strip()] for num in selected_functions.split(",") if num.strip() in mi_functions_map]
@@ -71,13 +84,14 @@ def main():
     num_bins = None
     if mutual_information_binning in selected_functions:
         try:
-            num_bins = int(input("Enter the number of bins for mutual_information_binningadaptive: ").strip())
+            num_bins = int(input("Enter the number of bins for mutual_information_binning: ").strip())
             if num_bins <= 0:
                 raise ValueError("Number of bins must be greater than 0.")
         except ValueError as e:
             print(f"Invalid input for number of bins: {e}. Exiting.")
             return
 
+    print(f"selectedddddddddddddddd: mi_estimate_function: {selected_functions}")
     # Use navigate_directories to select files or directories
     selected_files = navigate_directories(start_path=input_dir, multi_select=True, file_extension=".txt")
 
@@ -149,20 +163,16 @@ def main():
                 except ValueError:
                     print(f"Invalid input for file index: {index_str}. Skipping.")
 
-    # Process each file in parallel
-    def process_single_file(file_path):
-        for mi_func in selected_functions:
-            process_and_save_mi_table(
-                file_path=file_path,
-                output_dir=output_dir,
-                k_range=k_values,
-                mi_estimate_function=mi_func,
-                num_bins=num_bins if mi_func == mutual_information_binning else None,
-            )
+    # Prepare arguments for each file
+    args_list = [
+    (file_path, selected_functions, output_dir, k_values, num_bins)
+    for file_path in selected_files
+    ]
 
-    print("Processing selected files...")
+    # Process files in parallel
     with Pool() as pool:
-        pool.map(process_single_file, selected_files)
+        pool.map(process_single_file_wrapper, args_list)
+
 
     # Aggregate results
     print("Aggregating results...")
