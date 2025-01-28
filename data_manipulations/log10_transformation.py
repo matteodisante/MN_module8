@@ -27,7 +27,7 @@ def apply_log10_transformation_to_file(file_path):
                             transformed_values.append(str(np.log10(value)))  # log base 10
                         else:
                             # Replace non-positive values with log(1e-5)
-                            transformed_values.append(str(np.log10(1e-5)))
+                            transformed_values.append(str(-15.0))
                     except ValueError:
                         # Preserve non-numeric values (e.g., headers)
                         transformed_values.append(value)
