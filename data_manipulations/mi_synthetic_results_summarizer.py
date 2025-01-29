@@ -14,7 +14,7 @@ def read_mi_file(file_path):
     :return: DataFrame with columns ['k', 'mi_1'] or corresponding columns.
     """
     try:
-        df = pd.read_csv(file_path, delim_whitespace=True)
+        df = pd.read_csv(file_path, sep=r'\s+')  # Updated to use 'sep' instead of deprecated 'delim_whitespace'
         if "k" not in df.columns or len(df.columns) < 2:
             raise ValueError(f"Invalid file format in {file_path}. Expected 'k' and 'mi_*' columns.")
         return df
@@ -63,37 +63,47 @@ def save_mi_statistics(stats_df, file_paths, output_base_dir="../data/mi_summari
     :param file_paths: List of input file paths.
     :param output_base_dir: Base directory for saving the summary files.
     """
-    # Extracting path components
-    first_file_path = file_paths[0]
-    relative_path = os.path.relpath(first_file_path, start="../data/mi_numerical_results")
-    parts = relative_path.split(os.sep)
+    # Group files by their directory path until 'size_*'
+    grouped_files = {}
+    for file_path in file_paths:
+        key = os.path.dirname(file_path)  # Path until 'size_*'
+        if key not in grouped_files:
+            grouped_files[key] = []
+        grouped_files[key].append(file_path)
     
-    mi_type = parts[0]  # mi_1 or mi_sum
-    distribution_name = parts[1]  # circular, gamma_exponential, etc.
-    parameters = parts[2] if len(parts) > 2 else "unknown"  # Parameter folder
-    size_dir = parts[3] if len(parts) > 3 else "unknown"  # size_100, etc.
-    
-    # Adjust column names based on the MI type
-    if mi_type == "mi_1":
-        stats_df.rename(columns={"mean": "mean_mi_1", "std": "sigma_mi_1"}, inplace=True)
-    elif mi_type == "mi_sum":
-        stats_df.rename(columns={"mean": "mean_mi_sum", "std": "sigma_mi_sum"}, inplace=True)
-    elif mi_type == "mi_binning":
-        stats_df.rename(columns={"mean": "mean_mi_binning", "std": "sigma_mi_binning"}, inplace=True)
-    else:
-        print(f"[ERROR] Unsupported MI type: {mi_type}")
-        return
-    
-    # Construct output directory and file path
-    output_dir = os.path.join(output_base_dir, mi_type, distribution_name, parameters, size_dir)
-    os.makedirs(output_dir, exist_ok=True)
-    
-    output_file_name = f"summary_{distribution_name}_{parameters}_{size_dir}_{mi_type}.txt"
-    output_file_path = os.path.join(output_dir, output_file_name)
-    
-    stats_df.to_csv(output_file_path, index=False, sep='\t')
-    
-    print(f"Statistics saved to {output_file_path}")
+    for group_path, group_files in grouped_files.items():
+        stats_df = calculate_mi_statistics(group_files)
+        if stats_df is None:
+            continue
+
+        # Extract directory components
+        parts = group_path.split(os.sep)
+        mi_type = parts[-4]  # mi_1 or mi_sum
+        distribution_name = parts[-3]  # circular, gamma_exponential, etc.
+        parameters = parts[-2]  # Parameter folder
+        size_dir = parts[-1]  # size_100, etc.
+        
+        # Adjust column names based on the MI type
+        if mi_type == "mi_1":
+            stats_df.rename(columns={"mean": "mean_mi_1", "std": "sigma_mi_1"}, inplace=True)
+        elif mi_type == "mi_sum":
+            stats_df.rename(columns={"mean": "mean_mi_sum", "std": "sigma_mi_sum"}, inplace=True)
+        elif mi_type == "mi_binning":
+            stats_df.rename(columns={"mean": "mean_mi_binning", "std": "sigma_mi_binning"}, inplace=True)
+        else:
+            print(f"[ERROR] Unsupported MI type: {mi_type}")
+            continue
+        
+        # Construct output directory and file path
+        output_dir = os.path.join(output_base_dir, mi_type, distribution_name, parameters, size_dir)
+        os.makedirs(output_dir, exist_ok=True)
+        
+        output_file_name = f"summary_{distribution_name}_{parameters}_{size_dir}_{mi_type}.txt"
+        output_file_path = os.path.join(output_dir, output_file_name)
+        
+        stats_df.to_csv(output_file_path, index=False, sep='\t')
+        
+        print(f"Statistics saved to {output_file_path}")
     
 if __name__ == "__main__":
     # Navigate and select files
@@ -104,12 +114,5 @@ if __name__ == "__main__":
         print("No files selected. Exiting.")
         exit()
 
-    # Calculate statistics
-    stats_df = calculate_mi_statistics(selected_files)
-
-    if stats_df is not None:
-        print("Statistics calculated:")
-        print(stats_df)
-
-        # Save the statistics to the appropriate directory
-        save_mi_statistics(stats_df, selected_files)
+    # Save the statistics to the appropriate directory
+    save_mi_statistics(None, selected_files)
