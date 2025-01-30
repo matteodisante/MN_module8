@@ -12,7 +12,7 @@ from utils.decorators import time_it
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../core/')))
 from core.mutual_information_1 import mutual_information_1
 from core.mutual_information_1_entropies_sum import mutual_information_1_entropies_sum
-from core.mutual_information_binning import mutual_information_binning
+from core.mutual_information_binning import mutual_information_binning_adaptive
 
 
 
@@ -116,7 +116,6 @@ def extract_file_details(file_path):
 
 
 
-@time_it
 def process_and_save_mi_table(file_path, output_dir, k_values, num_bins=10, mi_estimate_function=None):
     """
     Process a dataset file and save mutual information calculations to a CSV file.
@@ -131,11 +130,11 @@ def process_and_save_mi_table(file_path, output_dir, k_values, num_bins=10, mi_e
         mi_estimate_map = {
             mutual_information_1: "mi_1",
             mutual_information_1_entropies_sum: "mi_sum",
-            mutual_information_binning: "mi_binning"
+            mutual_information_binning_adaptive: "mi_binning"
         }
 
         if mi_estimate_function not in mi_estimate_map:
-            raise ValueError("Invalid mi_estimate_function. Choose from mutual_information_1, mutual_information_1_entropies_sum, or mutual_information_binning.")
+            raise ValueError("Invalid mi_estimate_function. Choose from mutual_information_1, mutual_information_1_entropies_sum, or mutual_information_binning_adaptive.")
 
         mi_estimate = mi_estimate_map[mi_estimate_function]
 
@@ -197,7 +196,7 @@ def process_and_save_mi_table(file_path, output_dir, k_values, num_bins=10, mi_e
         rows = [["k", mi_estimate]]
         for k in k_values:
             # Compute MI using the selected function
-            if mi_estimate_function == mutual_information_binning:
+            if mi_estimate_function == mutual_information_binning_adaptive:
                 mi_value = mi_estimate_function(data, num_bins)
             else:
                 mi_value = mi_estimate_function(data, k)
