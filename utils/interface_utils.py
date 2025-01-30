@@ -1,5 +1,6 @@
 import os
 import logging
+import datetime
 
 def navigate_directories(start_path=".", multi_select=False, file_extension=".bin"):
     """
@@ -129,13 +130,22 @@ def parse_k_values(k_input):
 
 
 # Logging setup function
-def setup_logging():
-    log_filename = "mi_analysis.log"
+def setup_logger():
+    """Set up the logging configuration and create a log file dynamically."""
+    log_dir = "logging"
+    os.makedirs(log_dir, exist_ok=True)  # Ensure logging directory exists
+
+    # Nome file log dinamico basato sullo script attuale
+    script_name = os.path.basename(__file__).replace(".py", "")
+    log_filename = f"{script_name}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+    log_path = os.path.join(log_dir, log_filename)
+
     logging.basicConfig(
-        level=logging.DEBUG,  # Log all messages from DEBUG level onwards
-        format="%(asctime)s - %(levelname)s - %(message)s",  # Log format
+        level=logging.DEBUG,  # DEBUG mostra tutti i messaggi
+        format="%(asctime)s - %(levelname)s - %(message)s",
         handlers=[
-            logging.FileHandler(log_filename),  # Write logs to a file
-            logging.StreamHandler()  # Optionally, write logs to the console
+            logging.FileHandler(log_path),  # Scrive su file
+            logging.StreamHandler()  # Stampa in console
         ]
     )
+    logging.info("Logging started. File: %s", log_path)
