@@ -33,7 +33,7 @@ def find_k_nearest_neighbors(matrix, k):
 
 
 
-@time_it
+
 def compute_marginal_counts(matrix, epsilon):
     """
     Computes the marginal counts for a single variable (1D) using NearestNeighbors for efficiency.
