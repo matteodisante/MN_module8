@@ -1,15 +1,20 @@
 import os
+import sys
 import numpy as np
+import logging
+from datetime import datetime
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), './utils/')))
+from mutual_information_utils import process_and_save_mi_table
+from interface_utils import navigate_directories, setup_logger
+from io_utils import save_transformed_file
 
 
-from utils.mutual_information_utils import process_and_save_mi_table
-from utils.interface_utils import navigate_directories, setup_logging
-from utils.io_utils import save_transformed_file
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), './core/')))
+from mutual_information_1 import mutual_information_1
+from mutual_information_1_entropies_sum import mutual_information_1_entropies_sum
+from mutual_information_binning import mutual_information_binning_adaptive 
 
-
-from core.mutual_information_1 import mutual_information_1
-from core.mutual_information_1_entropies_sum import mutual_information_1_entropies_sum
-from core.mutual_information_binning import mutual_information_binning_adaptive
 
 
 
@@ -57,12 +62,13 @@ def read_existing_values(file_path, key_label):
     """
     existing_values = {}
     if not os.path.exists(file_path):
+        logging.info(f"File not found: {file_path}. No values do exist.")
         return existing_values  # Return an empty dictionary if the file doesn't exist
 
     with open(file_path, 'r') as file:
         header = file.readline().strip()
         if not header.startswith(f"{key_label} mi"):
-            print(f"Unexpected header in file {file_path}: {header}")
+            logging.warning(f"Formato header inaspettato in {file_path}: {header}")
             return {}
 
         for line in file:
@@ -70,7 +76,7 @@ def read_existing_values(file_path, key_label):
                 key, mi = line.strip().split()
                 existing_values[int(key)] = float(mi)
             except ValueError:
-                print(f"Malformed line in file {file_path}: {line.strip()}")
+                logging.error(f"Linea malformata in {file_path}: {line.strip()}")
 
     return existing_values
 
@@ -142,8 +148,22 @@ def calculate_missing_values_for_multiple_files(files, keys, mi_function, key_la
     summary = []
 
     # Check and summarize existing values for each file
+    logging.info("Trying loading files") 
     for file in files:
-        dataset = np.genfromtxt(file, delimiter=" ", skip_header=1)
+        try:
+            dataset = np.genfromtxt(file, delimiter=" ", skip_header=0)
+            #logging.info(f"Loaded Dataset: {file}, shape: {dataset.shape}")
+    
+            if np.isnan(dataset).any():
+                logging.warning(f"WARNING: file {file} contains NaN! Skipping.")
+                continue
+        
+        except Exception as e:
+            logging.error(f"Errore while reading {file}: {str(e)}")
+            continue 
+     
+    
+
         output_file_path = get_output_file_path(file, mi_function)
 
         if os.path.exists(output_file_path):
@@ -160,15 +180,15 @@ def calculate_missing_values_for_multiple_files(files, keys, mi_function, key_la
             "missing_values": missing_values,
             "dataset": dataset,
         })
-
+        
+    logging.info("Files loaded")
     # Display summary for all files
-    print(f"\nSummary of {key_label} values for selected files:")
+    logging.info(f"\nSummary of {key_label} values for selected files:")
     for item in summary:
-        print(f"- File: {os.path.basename(item['file'])}")
-        print(f"  Output file: {item['output_file']}")
-        print(f"  Existing {key_label} values: {item['existing_values']}")
-        print(f"  Missing {key_label} values: {item['missing_values']}")
-    print()
+        logging.info(f"- File: {os.path.basename(item['file'])}")
+        logging.info(f"Output file: {item['output_file']}")
+        logging.info(f"Existing {key_label} values: {item['existing_values']}")
+        logging.info(f"Missing {key_label} values: {item['missing_values']}")
 
     # If there are more than 3 files, ask for a global decision
     if len(files) > 3:
@@ -185,7 +205,7 @@ def calculate_missing_values_for_multiple_files(files, keys, mi_function, key_la
         missing_values = item["missing_values"]
 
         if not missing_values:
-            print(f"All {key_label} values already calculated for {os.path.basename(file)}.")
+            logging.info(f"All {key_label} values already calculated for {os.path.basename(file)}.")
             continue
 
         # If a global decision was made, use it; otherwise, ask for each file
@@ -198,7 +218,7 @@ def calculate_missing_values_for_multiple_files(files, keys, mi_function, key_la
             if proceed in ['y', 'yes']:
                 calculate_and_save_missing_values(dataset, output_file_path, missing_values, mi_function, key_label)
             else:
-                print(f"Skipping {os.path.basename(file)}.")
+                logging.info(f"Skipping {os.path.basename(file)}.")
 
 
 
@@ -227,14 +247,23 @@ def calculate_and_save_missing_values(dataset, output_file_path, missing_values,
     os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
 
     # Calculate the missing values
-    print(f"Calculating missing {key_label} values for {os.path.basename(output_file_path)}: {missing_values}")
-    mi_results = [mi_function(dataset, value) for value in missing_values]
+    logging.info(f"Calculating missing {key_label} values for {os.path.basename(output_file_path)}: {missing_values}")
+    mi_results = []
+    for value in missing_values:
+        try:
+            result = mi_function(dataset, value)
+            mi_results.append(result)
+        except Exception as e:
+            logging.error(f"Error calculating MI for {output_file_path}, {key_label}={value}: {str(e)}")
+            mi_results.append(None)  # Use None to indicate an error
 
     # Save the results
-    save_values_to_file(output_file_path, missing_values, mi_results, key_label, mi_label)
-    print(f"Results saved to: {output_file_path}")
+    try:
+        save_values_to_file(output_file_path, missing_values, mi_results, key_label, mi_label)
+        logging.info(f"Results saved successfully to: {output_file_path}")
+    except Exception as e:
+        logging.error(f"Error saving MI results to {output_file_path}: {str(e)}")
 
-    
     
     
     
@@ -243,7 +272,7 @@ def calculate_and_save_missing_values(dataset, output_file_path, missing_values,
     
 if __name__ == "__main__":
     print("Welcome to the Mutual Information Analysis Tool\n")
-    setup_logging()
+    setup_logger()
 
     base_output_dir = "data/."
 
@@ -259,7 +288,7 @@ if __name__ == "__main__":
         print("Select the MI estimation function to use:")
         print("1: mutual_information_1 (requires k values)")
         print("2: mutual_information_1_entropies_sum (requires k values)")
-        print("3: mutual_information_binning_adaptive (requires bin sizes)")
+        print("3: mutual_information_binning_adaptive (requires bins number)")
         mi_input = input("Enter the number corresponding to the desired function: ").strip()
         if mi_input in mi_functions_map:
             selected_function = mi_functions_map[mi_input]
@@ -289,9 +318,23 @@ if __name__ == "__main__":
                 print("No valid bins number provided. Please try again.")
         print("Valid bins number:", bins_number)
 
+    # Ask the user which type of data files to process
+    file_extension = None
+    while file_extension is None:
+        print("Select the type of data files to process:")
+        print("1: Linear data files (.txt)")
+        print("2: Log data files (_log.txt)")
+        file_choice = input("Enter 1 or 2: ").strip()
+        
+        if file_choice == "1":
+            file_extension = ".txt"
+        elif file_choice == "2":
+            file_extension = "_log.txt"
+        else:
+            print("Invalid selection. Please try again.")
+
     # Select files
-    #selected_files = navigate_directories(start_path='.', multi_select=True, file_extension=".txt") #Uncomment for processing linear data
-    selected_files = navigate_directories(start_path='.', multi_select=True, file_extension="_log.txt") #Uncomment for processing log data
+    selected_files = navigate_directories(start_path='.', multi_select=True, file_extension=file_extension)
     if not selected_files:
         print("No files selected. Exiting.")
         exit()
@@ -303,7 +346,7 @@ if __name__ == "__main__":
         )
     elif selected_function == mutual_information_binning_adaptive:
         calculate_missing_values_for_multiple_files(
-            selected_files, bin_sizes, selected_function, key_label="bins_number"
+            selected_files, bins_number, selected_function, key_label="bins_number"
         )
 
     print("Mutual Information Analysis completed successfully!")
