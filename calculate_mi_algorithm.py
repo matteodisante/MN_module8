@@ -97,7 +97,7 @@ def save_values_to_file(file_path, keys, mi_results, key_label, mi_label):
         file.write(f"{key_label} {mi_label}\n")
         for key, mi in sorted_data:
             file.write(f"{key} {mi}\n")
-    print(f"Updated file saved to: {file_path}")
+    print(f"Created/updated file saved to: {file_path}")
 
 
 
@@ -143,7 +143,7 @@ def calculate_missing_values_for_multiple_files(files, keys, mi_function, key_la
 
     # Check and summarize existing values for each file
     for file in files:
-        dataset = np.loadtxt(file)
+        dataset = np.genfromtxt(file, delimiter=" ", skip_header=1)
         output_file_path = get_output_file_path(file, mi_function)
 
         if os.path.exists(output_file_path):
@@ -290,7 +290,8 @@ if __name__ == "__main__":
         print("Valid bins number:", bins_number)
 
     # Select files
-    selected_files = navigate_directories(start_path='.', multi_select=True, file_extension=".txt")
+    #selected_files = navigate_directories(start_path='.', multi_select=True, file_extension=".txt") #Uncomment for processing linear data
+    selected_files = navigate_directories(start_path='.', multi_select=True, file_extension="_log.txt") #Uncomment for processing log data
     if not selected_files:
         print("No files selected. Exiting.")
         exit()
