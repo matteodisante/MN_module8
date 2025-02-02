@@ -2,6 +2,7 @@ import numpy as np
 from scipy.stats import kurtosis, skew
 from functools import partial
 from scipy.special import digamma
+from scipy.integrate import quad
 
 
 def correlate_data(independent_series, correlation):
@@ -50,7 +51,7 @@ def configure_target_function(target_function, **kwargs):
 
 
 
-
+# Functions to compute theoretical mi
 
 def circular_mi_theoretical(a, b, c):
     """
@@ -84,7 +85,7 @@ def circular_mi_theoretical(a, b, c):
     h_x = marginal_entropy()
 
     h_xy = (
-        0.5 + np.log(np.pi * (b - a))
+        0.5 + np.log10(np.pi * (b - a))
         - c**2 / ((c - a) * (b - c)) * (np.log(c) - 1.5)
         + a**2 / ((b - a) * (c - a)) * (np.log(a) - 1.5)
         + b**2 / ((b - a) * (b - c)) * (np.log(b) - 1.5)
@@ -93,23 +94,23 @@ def circular_mi_theoretical(a, b, c):
     return 2 * h_x - h_xy
 
 
-def weinman_exponential_mi_theoretical(u):
+def oredered_wienman_exponential_mi_theoretical(theta):
     """
     Calculate the exact mutual information for the Weinman exponential distribution.
 
-    :param u: Parameter of the distribution (0 < u < 1 for the valid range).
+    :param u: Parameter of the distribution (0 < u < 1 for the valid range), theta.
     :return: Mutual information (I_exact).
     """
-    if u < 0.5:
+    if theta < 0.5:
         mi_exact = (
-            np.log((2 * u) / (1 - 2 * u)) +
-            digamma(1 / (1 - 2 * u)) -
+            np.log10((2 * theta) / (1 - 2 * theta)) +
+            digamma(1 / (1 - 2 * theta)) -
             digamma(1)
         )
-    elif u > 0.5:
+    elif theta > 0.5:
         mi_exact = (
-            np.log((2 * u - 1) / u) +
-            digamma(2 * u / (2 * u - 1)) -
+            np.log10((2 * theta - 1) / theta) +
+            digamma(2 * theta / (2 * theta - 1)) -
             digamma(1)
         )
     else:
@@ -117,14 +118,30 @@ def weinman_exponential_mi_theoretical(u):
     return mi_exact
 
 
-def gamma_exponential_mi_theoretical(u):
+def gamma_exponential_mi_theoretical(theta):
     """
     Calculate the exact mutual information for the Gamma exponential distribution.
 
-    :param u: Shape parameter of the Gamma distribution (u > 0).
+    :param u: Shape parameter of the Gamma distribution (u > 0), theta.
     :return: Mutual information (I_exact).
     """
-    if u <= 0:
+    if theta <= 0:
         raise ValueError("The parameter u must be greater than 0.")
-    mi_exact = digamma(u + 1) - np.log(u)
+    mi_exact = digamma(theta + 1) - np.log10(theta)
+    return mi_exact
+
+def correlated_gaussian_rv_mi_theoretical(corr):
+    mi_exact = - 0.5 * np.log(1-corr**2)
+    return mi_exact
+
+def independent_exponential_rv_mi_theoretical():
+    mi_exact = 0
+    return mi_exact
+
+def independent_gaussian_rv_mi_theoretical():
+    mi_exact = 0
+    return mi_exact
+
+def independent_uniform_rv_mi_theoretical():
+    mi_exact = 0
     return mi_exact
