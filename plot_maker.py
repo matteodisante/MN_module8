@@ -13,7 +13,7 @@ from utils.config_utils import load_config
 from utils.math_utils import circular_mi_theoretical, gamma_exponential_mi_theoretical, \
     correlated_gaussian_rv_mi_theoretical, independent_exponential_rv_mi_theoretical, \
         independent_gaussian_rv_mi_theoretical, independent_uniform_rv_mi_theoretical, \
-            oredered_wienman_exponential_mi_theoretical
+            ordered_wienman_exponential_mi_theoretical
 
 
 
@@ -661,6 +661,7 @@ def main():
     # If figure 20 is chosen
     if figure_choice == "20":
         process_figure_20(matching_files, distribution_choice, mi_choice, log_transformed)
+
 
 if __name__ == "__main__":
     main()

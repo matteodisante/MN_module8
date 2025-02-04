@@ -94,22 +94,19 @@ def circular_mi_theoretical(a, b, c):
     return 2 * h_x - h_xy
 
 
-def oredered_wienman_exponential_mi_theoretical(theta):
+def ordered_wienman_exponential_mi_theoretical(theta):
     """
-    Calculate the exact mutual information for the Weinman exponential distribution.
-
-    :param u: Parameter of the distribution (0 < u < 1 for the valid range), theta.
-    :return: Mutual information (I_exact).
+    :param theta: Parameter of the distribution (0 < theta < 1 for the valid range)
     """
     if theta < 0.5:
         mi_exact = (
-            np.log10((2 * theta) / (1 - 2 * theta)) +
+            np.log((2 * theta) / (1 - 2 * theta)) +
             digamma(1 / (1 - 2 * theta)) -
             digamma(1)
         )
     elif theta > 0.5:
         mi_exact = (
-            np.log10((2 * theta - 1) / theta) +
+            np.log((2 * theta - 1) / theta) +
             digamma(2 * theta / (2 * theta - 1)) -
             digamma(1)
         )
@@ -119,15 +116,9 @@ def oredered_wienman_exponential_mi_theoretical(theta):
 
 
 def gamma_exponential_mi_theoretical(theta):
-    """
-    Calculate the exact mutual information for the Gamma exponential distribution.
-
-    :param u: Shape parameter of the Gamma distribution (u > 0), theta.
-    :return: Mutual information (I_exact).
-    """
     if theta <= 0:
-        raise ValueError("The parameter u must be greater than 0.")
-    mi_exact = digamma(theta + 1) - np.log10(theta)
+        raise ValueError("The parameter theta must be greater than 0.")
+    mi_exact = digamma(theta + 1) - np.log(theta)
     return mi_exact
 
 def correlated_gaussian_rv_mi_theoretical(corr):
