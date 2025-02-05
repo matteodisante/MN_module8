@@ -52,7 +52,6 @@ def configure_target_function(target_function, **kwargs):
 
 
 # Functions to compute theoretical mi
-
 def circular_mi_theoretical(a, b, c):
     """
     Calculate the theoretical mutual information for a circular distribution.
@@ -62,30 +61,36 @@ def circular_mi_theoretical(a, b, c):
     :param c: Middle radius where the triangular distribution switches.
     :return: Theoretical mutual information.
     """
-    def marginal_density(x):
+    def p_X(x):
         if abs(x) < a:
-            return 0
-        elif a <= abs(x) <= c:
             return (2 / (np.pi * (b - a) * (c - a))) * (
                 np.sqrt(c**2 - x**2) - np.sqrt(a**2 - x**2) -
                 a * np.log((np.sqrt(c**2 - x**2) + c) / (np.sqrt(a**2 - x**2) + a))
             )
-        elif c < abs(x) <= b:
-            return (2 / (np.pi * (b - a) * (b - c))) * (
-                b * np.log((np.sqrt(b**2 - x**2) + b) / (np.sqrt(c**2 - x**2) + c)) -
-                np.sqrt(b**2 - x**2) + np.sqrt(c**2 - x**2)
+        elif a <= abs(x) <= c:
+            term1 = (2 / (np.pi * (b - a) * (c - a))) * (
+            np.sqrt(c**2 - x**2) - a * np.log((np.sqrt(c**2 - x**2) + c) / abs(x))
             )
-        else:
+            term2 = (2 / (np.pi * (b - a) * (b - c))) * (np.sqrt(c**2 - x**2) - np.sqrt(b**2 - x**2) - 
+            b * np.log((np.sqrt(c**2 - x**2) + c) / (np.sqrt(b**2 - x**2) + b))
+            )
+            return term1 + term2
+        elif c < abs(x) <= b:
+            return (1 / (np.pi * (b - a) * (b - c))) * (
+                b * np.log( (np.sqrt(b**2 - x**2) + b) / np.abs(x)) -
+                np.sqrt(b**2 - x**2))
+        else:     
             return 0
 
+
     def marginal_entropy():
-        result, _ = quad(lambda x: -marginal_density(x) * np.log(marginal_density(x) + 1e-12), -b, b)
-        return result
+        result, error_estimate = quad(lambda x: -p_X(x) * np.log(p_X(x)), 0, b)
+        return 2*result
 
     h_x = marginal_entropy()
 
     h_xy = (
-        0.5 + np.log10(np.pi * (b - a))
+        0.5 + np.log(np.pi * (b - a))
         - c**2 / ((c - a) * (b - c)) * (np.log(c) - 1.5)
         + a**2 / ((b - a) * (c - a)) * (np.log(a) - 1.5)
         + b**2 / ((b - a) * (b - c)) * (np.log(b) - 1.5)
