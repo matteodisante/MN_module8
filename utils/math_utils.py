@@ -84,8 +84,16 @@ def circular_mi_theoretical(a, b, c):
 
 
     def marginal_entropy():
-        result, error_estimate = quad(lambda x: -p_X(x) * np.log(p_X(x)), 0, b)
-        return 2*result
+        intervals = [-b, -c, -a, a, c, b]
+        total_integral = 0
+        
+        for i in range(len(intervals) - 1):
+            start, end = intervals[i], intervals[i+1]
+            integral, _ = quad(lambda x: -p_X(x) * np.log(p_X(x)), start, end)
+            total_integral += integral
+        
+        return total_integral
+    
 
     h_x = marginal_entropy()
 
