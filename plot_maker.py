@@ -3,8 +3,6 @@ import os
 import re
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.interpolate import make_interp_spline
-import scipy.interpolate as spi
 import inspect
 
 #from utils.plot_utils import load_config_distributions, get_user_choice, select_files_by_extension, find_matching_files, \
@@ -146,63 +144,63 @@ def extract_k_or_bins_values_from_files(files):
     return sorted(x_values)
 
 
+
+
+
 def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_transformed):
     """
     Generates the plot for Figure 4 (one file for each N).
-    The y-axis represents the estimated mutual information.
     """
     plt.figure(figsize=(8, 6))
 
-    # Get all available N values to assign colors
-    N_values = sorted(set(int(re.search(rf"summary_{distribution_name}_(.*?)_size_(\d+)_({mi_estimate}).txt", 
-                                        os.path.basename(f)).group(2)) for f in files if re.search(rf"summary_{distribution_name}_(.*?)_size_(\d+)_({mi_estimate}).txt", 
-                                        os.path.basename(f))))
-    if log_transformed:
-        N_values = sorted(set(int(re.search(rf"summary_{distribution_name}_(.*?)_size_(\d+)_log_transformed_({mi_estimate}).txt", 
-                                            os.path.basename(f)).group(2)) for f in files if re.search(rf"summary_{distribution_name}_(.*?)_size_(\d+)_log_transformed_({mi_estimate}).txt", 
-                                            os.path.basename(f))))
+    # Dictionary to store the data for each N
+    data_dict = {}
 
-    # Create a color map for each unique N value
-    color_map = {N: plt.cm.Set1(i / (len(N_values)-1)) for i, N in enumerate(N_values)}
+    # Variable to store the parameter extracted from the first group of the regex
+    extracted_param = None
 
-    # List to collect labels for the legend
-    legend_labels = []
-
-    for file in sorted(files):
-        match = re.search(rf"summary_{distribution_name}_(.*?)_size_(\d+)_({mi_estimate}).txt", os.path.basename(file))
+    for file in files:
+        # Create the appropriate regular expression for matching the file name
         if log_transformed:
             match = re.search(rf"summary_{distribution_name}_(.*?)_size_(\d+)_log_transformed_({mi_estimate}).txt", os.path.basename(file))
+        else:
+            match = re.search(rf"summary_{distribution_name}_(.*?)_size_(\d+)_({mi_estimate}).txt", os.path.basename(file))
+        
         if match:
             N = int(match.group(2))
-            color = color_map[N]  # Get the corresponding color for this N
+
+            # Extract the parameter from the first group
+            extracted_param = match.group(1)  # This extracts the parameter from the filename
 
             # Load data
             first_column, means, sigmas = np.loadtxt(file, skiprows=1, unpack=True)
 
             # If mi_estimate is "mi_binning", the first value represents bins_number
             # Otherwise, it represents k_vals
-            x_vals = first_column / N  # Normalize by N
+            x_vals = first_column / N
 
-            # Sort to ensure the points are connected
-            sorted_indices = np.argsort(x_vals)
-            x_vals_sorted = x_vals[sorted_indices]
-            means_sorted = means[sorted_indices]
-            sigmas_sorted = sigmas[sorted_indices]
+            # Store the data in the dictionary, using N as the key
+            data_dict[N] = (x_vals, means, sigmas)
 
-            # Plot a line between the points with the assigned color
-            plt.plot(x_vals_sorted, means_sorted, linestyle='--', color=color)
+    # Sort the dictionary by N in ascending order
+    sorted_N_values = sorted(data_dict.keys())
 
-            # Points with error bars of the same color
-            plt.errorbar(x_vals_sorted, means_sorted, yerr=sigmas_sorted, fmt='.', color=color, capsize=1)
+    # List to collect the legend labels
+    legend_labels = []
 
-            # Add legend based on the N value
-            legend_labels.append(f'N={N}')
+    # Plot the data for each sorted N value
+    for N in sorted_N_values:
+        x_vals, means, sigmas = data_dict[N]
 
-    # Add the theoretical mutual information
-    plt.axhline(y=theoretical_mi, color='r', linestyle='-', linewidth=1, label=f'I theoretical = {theoretical_mi:.4f}')
+        # Points with error bars of the same color
+        plt.errorbar(x_vals, means, yerr=sigmas, linestyle='--', fmt='.', capsize=1, alpha=0.7, label=f'N={N}')
+        legend_labels.append(f'N={N}')
 
     # Customize the plot
-    plt.xlabel(r"num $_{\mathrm{bins}}$ /N" if mi_estimate == "mi_binning" else "k/N", fontsize=11)
+    plt.xlabel(r"num $_{\mathrm{bins}}$ /N" if mi_estimate == "mi_binning" else "k/N", fontsize=15)
+
+    # Plot the theoretical line without including it in the legend
+    plt.axhline(y=theoretical_mi, color='r', linestyle='-', linewidth=1, label='_nolegend_')
 
     # Map to transform mi_estimate to the subscript format
     subscript_map = {
@@ -215,12 +213,22 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
     subscript = subscript_map.get(mi_estimate, "")
 
     # Set the label with the subscript not in italics
-    plt.ylabel(r"I$_{\mathrm{" + subscript + r"}}$", fontsize=11)
+    plt.ylabel(r"I$_{\mathrm{" + subscript + r"}}$", fontsize=15)
 
-    # Sort the labels by N in ascending order
-    sorted_labels = sorted(legend_labels, key=lambda label: int(label.split('=')[1]))
+    # Format the title: Add the distribution name and the extracted parameter
+    formatted_distribution_name = distribution_name.replace('_', r'\_')
+    
+    # Add the extracted parameter from the filename
+    if extracted_param:
+        title = r"$\mathrm{" + formatted_distribution_name + r"}$ (" + extracted_param + r")"
+    else:
+        title = r"$\mathrm{" + formatted_distribution_name + r"}$"
 
-    plt.legend(title="Sample Size (N)", fontsize=11, loc='best', labels=sorted_labels)
+    # Set the title with distribution name and extracted parameter
+    plt.title(title, fontsize=15)
+
+    # Add the legend and other plot elements
+    plt.legend(fontsize=11, loc='best')
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.tight_layout()
     plt.show()
@@ -263,6 +271,7 @@ def process_figure_4(files, distribution_name, mi_estimate, log_transformed):
 
 
 
+
 def process_figure_7_9(files, distribution_name, mi_estimate, figure, log_transformed):
     """
     Manages the parameter selection and the k or number of bins for Figures 7 and 9, filters the corresponding files, and plots.
@@ -299,10 +308,9 @@ def process_figure_7_9(files, distribution_name, mi_estimate, figure, log_transf
         if selected_files:
             grouped_files[param_value] = selected_files
 
-    plt.figure(figsize=(8, 6))
 
-    # Create a soft color map for each parameter value
-    color_map = plt.cm.get_cmap('Set1', len(grouped_files))  # Use a predefined colormap (tab10)
+
+    plt.figure(figsize=(8, 6))
 
     # Sort the parameter values in ascending order
     sorted_param_values = sorted(grouped_files.keys())
@@ -345,7 +353,7 @@ def process_figure_7_9(files, distribution_name, mi_estimate, figure, log_transf
                             if match:
                                 N = int(match.group(1))
                                 # If theoretical mutual information is valid, add points
-                                x_vals.append((k_choice or bins_choice) / N)
+                                x_vals.append(1/N)
                                 y_vals.append(float(columns[1]) / theoretical_mi)
                                 y_errs.append(float(columns[2]) / theoretical_mi)
                             else:
@@ -361,7 +369,7 @@ def process_figure_7_9(files, distribution_name, mi_estimate, figure, log_transf
                             if match:
                                 N = int(match.group(1))
                                 # If theoretical mutual information is valid, add points
-                                x_vals.append((k_choice or bins_choice) / N)
+                                x_vals.append(1/ N)
                                 # Subtract theoretical mutual information from mean (y_vals)
                                 y_vals.append(float(columns[1]) - theoretical_mi)
                                 # Keep error the same (y_errs)
@@ -375,16 +383,10 @@ def process_figure_7_9(files, distribution_name, mi_estimate, figure, log_transf
         y_vals = np.array(y_vals)[sorted_indices]
         y_errs = np.array(y_errs)[sorted_indices]
 
-        # Assign a color for this parameter value
-        color = color_map(idx)
-
-        # Connect the points with a line using the color
-        plt.plot(x_vals, y_vals, linestyle='--', label=f"{selected_param}={param_value}", color=color)
-
         # Plot with error bars using the same color
-        plt.errorbar(x_vals, y_vals, yerr=y_errs, fmt='.', color=color, capsize=1)
+        plt.errorbar(x_vals, y_vals, yerr=y_errs, fmt='.', linestyle='--', capsize=1, alpha = 0.7, label=param_value)
 
-    plt.xlabel(f"{bins_choice}/N" if mi_estimate == "mi_binning" else f"{k_choice}/N", fontsize=11)
+    plt.xlabel(f"{bins_choice}/N" if mi_estimate == "mi_binning" else f"{k_choice}/N", fontsize=15)
 
     # Map to transform mi_estimate into the subscript format
     subscript_map = {
@@ -398,15 +400,19 @@ def process_figure_7_9(files, distribution_name, mi_estimate, figure, log_transf
 
     # Set the label with the subscript not in italics
     if figure == "7":
-        plt.ylabel(r"$\mathrm{I}_{\mathrm{" + subscript + r"}} / \mathrm{I}_{\mathrm{exact}}$", fontsize=11)
+        plt.ylabel(r"$\mathrm{I}_{\mathrm{" + subscript + r"}} / \mathrm{I}_{\mathrm{exact}}$", fontsize=15)
     else:
         if figure == "9":
-            plt.ylabel(r"$\mathrm{I}_{\mathrm{" + subscript + r"}} - \mathrm{I}_{\mathrm{exact}}$", fontsize=11)
+            plt.ylabel(r"$\mathrm{I}_{\mathrm{" + subscript + r"}} - \mathrm{I}_{\mathrm{exact}}$", fontsize=15)
 
     plt.legend(title=selected_param, fontsize=11, loc='best')
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.tight_layout()
     plt.show()
+
+
+
+
 
 
 def process_figure_8(files, distribution_name, mi_estimate, log_transformed):
@@ -535,8 +541,9 @@ def process_figure_20(files, distribution_name, mi_estimators, log_transformed):
         }
         theoretical_mi = theoretical_mi_function(**filtered_params)
 
+
+
     plt.figure(figsize=(8, 6))
-    color_map = plt.cm.get_cmap('Set1', len(mi_estimators))  # Assign different colors to estimators
 
     for idx, mi_estimate in enumerate(mi_estimators):
         # Determine whether to ask for k or bins
@@ -566,7 +573,7 @@ def process_figure_20(files, distribution_name, mi_estimators, log_transformed):
                         match = re.search(r"size_(\d+)", file)
                         if match:
                             N = int(match.group(1))
-                            x_vals.append(N)
+                            x_vals.append(1/N)
                             y_vals.append(float(columns[1]) / theoretical_mi)
                             y_errs.append(float(columns[2]) / theoretical_mi)
                         else:
@@ -577,18 +584,143 @@ def process_figure_20(files, distribution_name, mi_estimators, log_transformed):
         x_vals = np.array(x_vals)[sorted_indices]
         y_vals = np.array(y_vals)[sorted_indices]
         y_errs = np.array(y_errs)[sorted_indices]
-        
-        # Assign color and plot
-        color = color_map(idx)
-        plt.plot(x_vals, y_vals, linestyle='--', label=mi_estimate, color=color)
-        plt.errorbar(x_vals, y_vals, yerr=y_errs, fmt='.', color=color, capsize=1)
 
-    plt.xlabel(r"N", fontsize=11)
-    plt.ylabel(r"$\mathrm{I}_{\mathrm{est}} / \mathrm{I}_{\mathrm{exact}}$", fontsize=11)
+        # Assign color and plot
+        plt.errorbar(x_vals, y_vals, yerr=y_errs, fmt='.', linestyle='--', capsize=1, label=mi_estimate)
+
+    # Format the title: Add the distribution name, the extracted parameter, and selected parameters
+    formatted_distribution_name = distribution_name.replace('_', r'\_')
+    
+    # Add the extracted parameter from the filename
+    title = r"$\mathrm{" + formatted_distribution_name + r"}$"
+
+    # Add selected parameters to the title
+    selected_params_str = " (" + ", ".join([f"{param_name}={param_value}" for param_name, param_value in selected_params.items()]) + ")"
+    title += selected_params_str
+
+    # Set the title with distribution name and extracted parameter
+    plt.title(title, fontsize=15)
+
+    plt.xlabel(r"1/N", fontsize=15)
+    plt.ylabel(r"$\mathrm{I}_{\mathrm{est}} / \mathrm{I}_{\mathrm{exact}}$", fontsize=15)
     plt.legend(title="MI Estimators", fontsize=11, loc='best')
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.tight_layout()
     plt.show()
+
+
+
+def process_figure_21(files, distribution_name, mi_estimators, log_transformed):
+    """
+    Plots Figure 21 by showing multiple MI estimators with a fixed N value and a parameter chosen for the x-axis.
+    """
+    # Gets the parameter-value dictionary and the one for associating paths
+    all_parameters = []
+    extracted_params_per_file = []
+    for mi in mi_estimators:
+        params, extracted_params = extract_parameters_from_paths(files, distribution_name, mi, log_transformed)
+        all_parameters.append(params)
+        extracted_params_per_file.append(extracted_params)
+
+    # Choose the parameter to analyze
+    selected_param = get_user_choice(list(all_parameters[0].keys()), "Choose the parameter to analyze:")
+
+    # Calculate theoretical MI for each value of the selected parameter
+    theoretical_mi_values = {}
+    theoretical_mi_function = globals().get(f"{distribution_name}_mi_theoretical")
+    
+    if theoretical_mi_function:
+        for param_value in all_parameters[0][selected_param]:
+            required_params = inspect.signature(theoretical_mi_function).parameters
+            filtered_params = {
+                key: float(param_value) if key == selected_param else float(next(iter(value)))
+                for key, value in all_parameters[0].items() if key in required_params
+            }
+            theoretical_mi_values[param_value] = theoretical_mi_function(**filtered_params)
+
+    # Get all possible values of N from the file names
+    available_sizes = set()
+    for file in files:
+        match = re.search(r"size_(\d+)", os.path.basename(file))
+        if match:
+            available_sizes.add(int(match.group(1)))
+    
+    available_sizes = sorted(available_sizes)
+
+    # Ask the user to choose a value for N
+    N_choice = get_user_choice(available_sizes, "Choose a value for N:")
+    print(f"N_choice selected: {N_choice}")
+
+    # Group the files by the selected parameter and N value
+    filtered_files = [{} for _ in range(len(mi_estimators))]
+    for i, mi_estimate in enumerate(mi_estimators):
+        for param_value in all_parameters[0][selected_param]:
+            selected_files = filter_files_by_parameters(extracted_params_per_file[i], {selected_param: param_value})
+            selected_files = [file for file in selected_files if f"size_{N_choice}_" in os.path.basename(file)]
+            if selected_files:
+                filtered_files[i][param_value] = selected_files
+
+    # Create the plot
+    plt.figure(figsize=(8, 6))
+
+    # Select any value from the set (get a value from the set)
+    param_value_choice = next(iter(all_parameters[0][selected_param]))
+
+    # Iterate over each MI estimator
+    for idx, mi_estimate in enumerate(mi_estimators):
+        # Get the files corresponding to the current estimator and the selected parameter value
+        estimator_files = filtered_files[idx].get(param_value_choice, [])
+
+        # Determine whether to ask for k or bins
+        if "binning" in mi_estimate.lower():
+            k_bins_values = extract_k_or_bins_values_from_files(estimator_files)  # Extract bins
+            param_type = "bins"
+        else:
+            k_bins_values = extract_k_or_bins_values_from_files(estimator_files)  # Extract k
+            param_type = "k"
+
+        if not k_bins_values:
+            print(f"No {param_type} values found for {mi_estimate}. Exiting.")
+            exit()
+
+        # Ask the user to choose the value of k or bins for the plot
+        k_bins_choice = get_user_choice(k_bins_values, f"Choose the value of {param_type} to use for the plot (for {mi_estimate}):")
+
+        # Prepare x, y values for the plot
+        x_vals, y_vals, y_err = [], [], []
+
+        for param_value in sorted(filtered_files[idx].keys()):
+            files_for_param_value = filtered_files[idx][param_value]
+            x_vals.append(param_value)  # Parameter value will be on the x-axis
+
+            for file in files_for_param_value:
+                with open(file, 'r') as f:
+                    next(f)  # Skip header
+                    for line in f:
+                        columns = line.strip().split()
+                        # Assume that the k/bins is in the first column, media in the second, and sigma in the third
+                        if columns and int(columns[0]) == k_bins_choice:
+                            # Compute the theoretical MI
+                            theoretical_mi = theoretical_mi_values.get(param_value, 1)
+                            y_vals.append(float(columns[1]) / theoretical_mi)
+                            y_err.append(float(columns[2]) / theoretical_mi)
+
+        # Plot the ratio I_est / I_theoretical for the current estimator with error bars
+        plt.errorbar(x_vals, y_vals, yerr=y_err, label=mi_estimate, marker='.', linestyle='--', alpha=0.7)
+
+    # Title formatting
+    formatted_distribution_name = distribution_name.replace('_', r'\_')
+    title = r"$\mathrm{" + formatted_distribution_name + r"}$"
+    title += f" (N={N_choice})"
+    plt.title(title, fontsize=15)
+
+    plt.xlabel(r"{selected_param}", fontsize=15)
+    plt.ylabel(r"$\mathrm{I}_{\mathrm{est}} / \mathrm{I}_{\mathrm{theoretical}}$", fontsize=15)
+    plt.legend(title="MI Estimators", fontsize=11, loc='best')
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.tight_layout()
+    plt.show()
+
 
 
 
@@ -642,6 +774,7 @@ def main():
     else:
         print("No matching files found in the selected folder.")
 
+
     # If figure 4 is chosen
     if figure_choice == "4":
         process_figure_4(matching_files, distribution_choice, mi_choice, log_transformed)
@@ -662,7 +795,20 @@ def main():
     if figure_choice == "20":
         process_figure_20(matching_files, distribution_choice, mi_choice, log_transformed)
 
+    # If figure 21 is chosen
+    if figure_choice == "21":
+        process_figure_21(matching_files, distribution_choice, mi_choice, log_transformed)
+
 
 if __name__ == "__main__":
     main()
+
+    while True:
+        ask_for_another_plot = get_user_choice(["Yes", "No"], "Do you want to create another plot?") == "Yes"
+
+        if not ask_for_another_plot:
+            print("Exiting the plot creation process.")
+            break
+
+        main()
 
