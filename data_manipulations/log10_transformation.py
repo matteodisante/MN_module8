@@ -6,9 +6,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../u
 from interface_utils import navigate_directories  # Ensure this utility is properly implemented and available
 
 
-def apply_log10_transformation_to_file(file_path):
+def apply_ln_transformation_to_file(file_path):
     """
-    Reads a file and applies a logarithmic transformation (log base 10) to its numeric values.
+    Reads a file and applies a logarithmic transformation (log base e) to its numeric values.
 
     :param file_path: Path to the input file.
     :return: A list of transformed rows as strings.
@@ -24,10 +24,10 @@ def apply_log10_transformation_to_file(file_path):
                     try:
                         value = float(value)
                         if value > 0:
-                            transformed_values.append(str(np.log10(value)))  # log base 10
+                            transformed_values.append(str(np.log(value)))  # log base e
                         else:
-                            # Replace non-positive values with log(1e-5)
-                            transformed_values.append(str(-15.0))
+                            # Replace non-positive values with ln(e^-50) \approx ln(1.92e-22)
+                            transformed_values.append(str(-50.0))
                     except ValueError:
                         # Preserve non-numeric values (e.g., headers)
                         transformed_values.append(value)
@@ -65,7 +65,7 @@ def save_transformed_data_to_subfolder(file_path, transformed_data):
 
 
 if __name__ == "__main__":
-    print("Log10 Transformation Tool\n")
+    print("ln Transformation Tool\n")
 
     # Use navigate_directories to select files
     selected_files = navigate_directories(
@@ -81,9 +81,9 @@ if __name__ == "__main__":
     for file_path in selected_files:
         if file_path.endswith(".txt"):
             print(f"Applying log10 transformation to {file_path}")
-            transformed_data = apply_log10_transformation_to_file(file_path)
+            transformed_data = apply_ln_transformation_to_file(file_path)
             save_transformed_data_to_subfolder(file_path, transformed_data)
         else:
             print(f"Skipping non-txt file: {file_path}")
 
-    print("Log10 Transformation completed.")
+    print("ln Transformation completed.")
