@@ -703,7 +703,8 @@ def process_figure_21(files, distribution_name, mi_estimators, log_transformed):
                             # Compute the theoretical MI
                             theoretical_mi = theoretical_mi_values.get(param_value, 1)
                             y_vals.append(float(columns[1]) / theoretical_mi)
-                            y_err.append(float(columns[2]) / theoretical_mi)
+                            y_err.append(float(columns[2]) / np.abs(theoretical_mi))
+                            print(mi_estimate)
 
         # Plot the ratio I_est / I_theoretical for the current estimator with error bars
         plt.errorbar(x_vals, y_vals, yerr=y_err, label=mi_estimate, marker='.', linestyle='--', alpha=0.7)
@@ -714,7 +715,7 @@ def process_figure_21(files, distribution_name, mi_estimators, log_transformed):
     title += f" (N={N_choice})"
     plt.title(title, fontsize=15)
 
-    plt.xlabel(r"{selected_param}", fontsize=15)
+    plt.xlabel(rf"${selected_param}$", fontsize=15)
     plt.ylabel(r"$\mathrm{I}_{\mathrm{est}} / \mathrm{I}_{\mathrm{theoretical}}$", fontsize=15)
     plt.legend(title="MI Estimators", fontsize=11, loc='best')
     plt.grid(True, linestyle='--', alpha=0.6)
