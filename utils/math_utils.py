@@ -57,34 +57,34 @@ def circular_mi_theoretical(a, b, c):
     Calculate the theoretical mutual information for a circular distribution.
 
     :param a: Inner radius of the circular distribution.
-    :param b: Outer radius of the circular distribution.
-    :param c: Middle radius where the triangular distribution switches.
+    :param c: Outer radius of the circular distribution.
+    :param b: Middle radius where the triangular distribution switches.
     :return: Theoretical mutual information.
     """
     def p_X(x):
         if abs(x) < a:
-            return (2 / (np.pi * (b - a) * (c - a))) * (
-                np.sqrt(c**2 - x**2) - np.sqrt(a**2 - x**2) -
-                a * np.log((np.sqrt(c**2 - x**2) + c) / (np.sqrt(a**2 - x**2) + a))
+            return (2 / (np.pi * (c - a) * (b - a))) * (
+                np.sqrt(b**2 - x**2) - np.sqrt(a**2 - x**2) -
+                a * np.log((np.sqrt(b**2 - x**2) + b) / (np.sqrt(a**2 - x**2) + a))
             )
-        elif a <= abs(x) <= c:
-            term1 = (2 / (np.pi * (b - a) * (c - a))) * (
-            np.sqrt(c**2 - x**2) - a * np.log((np.sqrt(c**2 - x**2) + c) / abs(x))
+        elif a <= abs(x) <= b:
+            term1 = (2 / (np.pi * (c - a) * (b - a))) * (
+            np.sqrt(b**2 - x**2) - a * np.log((np.sqrt(b**2 - x**2) + b) / abs(x))
             )
-            term2 = (2 / (np.pi * (b - a) * (b - c))) * (np.sqrt(c**2 - x**2) - np.sqrt(b**2 - x**2) - 
-            b * np.log((np.sqrt(c**2 - x**2) + c) / (np.sqrt(b**2 - x**2) + b))
+            term2 = (2 / (np.pi * (c - a) * (c - b))) * (np.sqrt(b**2 - x**2) - np.sqrt(c**2 - x**2) - 
+            c * np.log((np.sqrt(b**2 - x**2) + b) / (np.sqrt(c**2 - x**2) + c))
             )
             return term1 + term2
-        elif c < abs(x) <= b:
-            return (1 / (np.pi * (b - a) * (b - c))) * (
-                b * np.log( (np.sqrt(b**2 - x**2) + b) / np.abs(x)) -
-                np.sqrt(b**2 - x**2))
+        elif b < abs(x) <= c:
+            return (1 / (np.pi * (c - a) * (c - b))) * (
+                c * np.log( (np.sqrt(c**2 - x**2) + c) / np.abs(x)) -
+                np.sqrt(c**2 - x**2))
         else:     
             return 0
 
 
     def marginal_entropy():
-        intervals = [-b, -c, -a, a, c, b]
+        intervals = [-c, -b, -a, a, b, c]
         total_integral = 0
         
         for i in range(len(intervals) - 1):
@@ -98,10 +98,10 @@ def circular_mi_theoretical(a, b, c):
     h_x = marginal_entropy()
 
     h_xy = (
-        0.5 + np.log(np.pi * (b - a))
-        - c**2 / ((c - a) * (b - c)) * (np.log(c) - 1.5)
-        + a**2 / ((b - a) * (c - a)) * (np.log(a) - 1.5)
-        + b**2 / ((b - a) * (b - c)) * (np.log(b) - 1.5)
+        0.5 + np.log(np.pi * (c - a))
+        - b**2 / ((b - a) * (c - b)) * (np.log(b) - 1.5)
+        + a**2 / ((c - a) * (b - a)) * (np.log(a) - 1.5)
+        + c**2 / ((c - a) * (c - b)) * (np.log(c) - 1.5)
     )
 
     return 2 * h_x - h_xy
