@@ -5,7 +5,6 @@ from scipy.special import digamma
 
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../utils')))
-from utils.decorators import time_it
 from utils.core_utils import find_k_nearest_neighbors
 
 
@@ -37,7 +36,7 @@ def mutual_information_1_entropies_sum(dataset, k):
 		marginal_data = dataset[:, var_idx]
 		_, distances_marginal = find_k_nearest_neighbors(marginal_data.reshape(-1, 1), k)
 		epsilon_marginal_v[:, var_idx] = 2 * distances_marginal[:, k-1]
-		entropy_marginal_means[var_idx] = np.mean(np.log(epsilon_marginal_v[:, var_idx]))
+		entropy_marginal_means[var_idx] = np.mean(np.log(np.maximum(epsilon_marginal_v[:, var_idx], 1e-10)))
 		
 	mi = ( 
 	(n_variables - 1) * (digamma(n_samples) - digamma(k)) 
