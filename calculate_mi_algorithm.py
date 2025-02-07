@@ -318,26 +318,27 @@ if __name__ == "__main__":
                 print("No valid bins number provided. Please try again.")
         print("Valid bins number:", bins_number)
 
-    # Ask the user which type of data files to process
-    file_extension = None
-    while file_extension is None:
+
+    # Ask the user which type of data files to process and filter di conseguenza
+    selected_files = []
+    while not selected_files:
         print("Select the type of data files to process:")
-        print("1: Linear data files (.txt)")
+        print("1: Linear data files (.txt) (excluding files containing '_log')")
         print("2: Log data files (_log.txt)")
         file_choice = input("Enter 1 or 2: ").strip()
         
         if file_choice == "1":
-            file_extension = ".txt"
+            # Prendi tutti i file che terminano con .txt, poi escludi quelli che contengono '_log'
+            all_files = navigate_directories(start_path='.', multi_select=True, file_extension=".txt")
+            selected_files = [f for f in all_files if "_log" not in os.path.basename(f)]
         elif file_choice == "2":
-            file_extension = "_log.txt"
+            # Prendi i file che terminano con _log.txt
+            selected_files = navigate_directories(start_path='.', multi_select=True, file_extension="_log.txt")
         else:
             print("Invalid selection. Please try again.")
-
-    # Select files
-    selected_files = navigate_directories(start_path='.', multi_select=True, file_extension=file_extension)
-    if not selected_files:
-        print("No files selected. Exiting.")
-        exit()
+    
+        if not selected_files:
+            print("No files selected for the chosen option. Please try again.")
 
     # Process files based on the selected function
     if selected_function in [mutual_information_1, mutual_information_1_entropies_sum]:
