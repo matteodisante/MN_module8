@@ -172,8 +172,31 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
             # Extract the parameter from the first group
             extracted_param = match.group(1)  # This extracts the parameter from the filename
 
-            # Load data
-            first_column, means, sigmas = np.loadtxt(file, skiprows=1, unpack=True)
+            # List to store valid data
+            valid_data = []
+
+            # Open the file
+            with open(file, 'r') as f:
+                # Skip the header (first row)
+                next(f)
+                
+                # Loop to read each line from the file
+                for line in f:
+                    # Convert the line into a float array
+                    row = np.fromstring(line, sep=' ')
+                    second_column_value = row[1]  # The second column (index 1)
+                    
+                    # Check if the second column is infinite (infinity) or NaN
+                    if not np.isinf(second_column_value) and not np.isnan(second_column_value):
+                        valid_data.append(row)  # Add the row to the list if it's valid
+
+            # Convert the valid data into a numpy array
+            data_cleaned = np.array(valid_data).reshape(-1, 3)
+
+            # Separate the columns
+            first_column = data_cleaned[:, 0]
+            means = data_cleaned[:, 1]
+            sigmas = data_cleaned[:, 2]
 
             # If mi_estimate is "mi_binning", the first value represents bins_number
             # Otherwise, it represents k_vals
@@ -344,20 +367,40 @@ def process_figure_7_9(files, distribution_name, mi_estimate, figure, log_transf
                 continue  # Skip the rest of the loop for this parameter value
 
             for file in file_list:
+                # List to store valid data
+                valid_data = []
                 with open(file, 'r') as f:
                     next(f)  # Skip the header
                     for line in f:
-                        columns = line.strip().split()
-                        if columns and ((k_choice and int(columns[0]) == k_choice) or (bins_choice and int(columns[0]) == bins_choice)):
-                            match = re.search(r"size_(\d+)", file)
-                            if match:
-                                N = int(match.group(1))
-                                # If theoretical mutual information is valid, add points
-                                x_vals.append(1/N)
-                                y_vals.append(float(columns[1]) / theoretical_mi)
-                                y_errs.append(float(columns[2]) / theoretical_mi)
-                            else:
-                                print(f"Warning: unable to extract N from file name {file}")
+                        # Convert the line into a float array
+                        row = np.fromstring(line, sep=' ')
+                        second_column_value = row[1]  # The second column (index 1)
+                        
+                        # Check if the second column is infinite (infinity) or NaN
+                        if not np.isinf(second_column_value) and not np.isnan(second_column_value):
+                            valid_data.append(row)  # Add the row to the list if it's valid
+
+                # Convert the valid data into a numpy array
+                data_cleaned = np.array(valid_data).reshape(-1, 3)
+
+                # Separate the columns
+                first_column = data_cleaned[:, 0]
+                means = data_cleaned[:, 1]
+                sigmas = data_cleaned[:, 2]
+
+                for i in range(len(first_column)):
+                    if int(first_column[i]) == k_choice:
+                        match = re.search(r"size_(\d+)", file)
+                        if match:
+                            N = int(match.group(1))
+                            # If theoretical mutual information is valid, add points
+                            x_vals.append(1/N)
+                            y_vals.append(float(means[i]) / theoretical_mi)
+                            y_errs.append(float(sigmas[i]) / np.abs(theoretical_mi))
+                        else:
+                            print(f"Warning: unable to extract N from file name {file}")
+
+
         elif figure == "9":
             for file in file_list:
                 with open(file, 'r') as f:
@@ -565,19 +608,43 @@ def process_figure_20(files, distribution_name, mi_estimators, log_transformed):
         
         # Process files and extract data
         for file in filtered_files[idx]:
+            # List to store valid data
+            valid_data = []
+
+            # Open the file
             with open(file, 'r') as f:
-                next(f)  # Skip header
+                # Skip the header (first row)
+                next(f)
+                
+                # Loop to read each line from the file
                 for line in f:
-                    columns = line.strip().split()
-                    if columns and int(columns[0]) == k_bins_choice:
-                        match = re.search(r"size_(\d+)", file)
-                        if match:
-                            N = int(match.group(1))
-                            x_vals.append(1/N)
-                            y_vals.append(float(columns[1]) / theoretical_mi)
-                            y_errs.append(float(columns[2]) / theoretical_mi)
-                        else:
-                            print(f"Warning: unable to extract N from file name {file}")
+                    # Convert the line into a float array
+                    row = np.fromstring(line, sep=' ')
+                    second_column_value = row[1]  # The second column (index 1)
+                    
+                    # Check if the second column is infinite (infinity) or NaN
+                    if not np.isinf(second_column_value) and not np.isnan(second_column_value):
+                        valid_data.append(row)  # Add the row to the list if it's valid
+
+            # Convert the valid data into a numpy array
+            data_cleaned = np.array(valid_data).reshape(-1, 3)
+
+            # Separate the columns
+            first_column = data_cleaned[:, 0]
+            means = data_cleaned[:, 1]
+            sigmas = data_cleaned[:, 2]
+
+            for i in range(len(first_column)):
+                if int(first_column[i]) == k_bins_choice:
+                    match = re.search(r"size_(\d+)", file)
+                    if match:
+                        N = int(match.group(1))
+                        x_vals.append(1/N)
+                        y_vals.append(float(means[i]) / theoretical_mi)
+                        y_errs.append(float(sigmas[i]) / np.abs(theoretical_mi))
+                    else:
+                        print(f"Warning: unable to extract N from file name {file}")
+
         
         # Sort data by x (N)
         sorted_indices = np.argsort(x_vals)
@@ -694,17 +761,39 @@ def process_figure_21(files, distribution_name, mi_estimators, log_transformed):
             x_vals.append(param_value)  # Parameter value will be on the x-axis
 
             for file in files_for_param_value:
+                # List to store valid data
+                valid_data = []
+
+                # Open the file
                 with open(file, 'r') as f:
-                    next(f)  # Skip header
+                    # Skip the header (first row)
+                    next(f)
+                    
+                    # Loop to read each line from the file
                     for line in f:
-                        columns = line.strip().split()
-                        # Assume that the k/bins is in the first column, media in the second, and sigma in the third
-                        if columns and int(columns[0]) == k_bins_choice:
-                            # Compute the theoretical MI
-                            theoretical_mi = theoretical_mi_values.get(param_value, 1)
-                            y_vals.append(float(columns[1]) / theoretical_mi)
-                            y_err.append(float(columns[2]) / np.abs(theoretical_mi))
-                            print(mi_estimate)
+                        # Convert the line into a float array
+                        row = np.fromstring(line, sep=' ')
+                        second_column_value = row[1]  # The second column (index 1)
+                        
+                        # Check if the second column is infinite (infinity) or NaN
+                        if not np.isinf(second_column_value) and not np.isnan(second_column_value):
+                            valid_data.append(row)  # Add the row to the list if it's valid
+
+                # Convert the valid data into a numpy array
+                data_cleaned = np.array(valid_data).reshape(-1, 3)
+
+                # Separate the columns
+                first_column = data_cleaned[:, 0]
+                means = data_cleaned[:, 1]
+                sigmas = data_cleaned[:, 2]
+
+                for i in range(len(first_column)):
+                    if int(first_column[i]) == k_bins_choice:
+                        # Compute the theoretical MI
+                        theoretical_mi = theoretical_mi_values.get(param_value, 1)
+                        y_vals.append(float(means[i]) / theoretical_mi)
+                        y_err.append(float(sigmas[i]) / np.abs(theoretical_mi))
+
 
         # Plot the ratio I_est / I_theoretical for the current estimator with error bars
         plt.errorbar(x_vals, y_vals, yerr=y_err, label=mi_estimate, marker='.', linestyle='--', alpha=0.7)
