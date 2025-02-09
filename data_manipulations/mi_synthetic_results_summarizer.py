@@ -55,10 +55,26 @@ def calculate_mi_statistics(file_paths):
     
     mi_columns = [col for col in merged_df.columns if col.startswith("mi")]
     stats_df = merged_df[[key_col]].copy()
-    stats_df['mean'] = merged_df[mi_columns].mean(axis=1)
+    
+    # Compute mean, ignoring NaNs
+    stats_df['mean'] = merged_df[mi_columns].mean(axis=1, skipna=True)
+    
+    # Compute unbiased standard deviation (sample std)
     stats_df['std'] = merged_df[mi_columns].std(axis=1, ddof=1)  # Unbiased std
     
+    # Compute the number of valid values (non-NaN) per row
+    n_values = merged_df[mi_columns].count(axis=1)
+    
+    # Compute the standard deviation of the sample mean
+    stats_df['std_mean'] = stats_df['std'] / np.sqrt(n_values)
+    
+    # Handle cases where all values in a row are NaN
+    # Ensure that rows with no valid MI values (where all values are NaN) explicitly have NaN for 'mean', 'std', and 'std_mean'
+    stats_df.loc[n_values == 0, ['mean', 'std', 'std_mean']] = np.nan
+ 
     return stats_df, key_col
+    
+    
 
 def save_mi_statistics(stats_df, file_paths, key_col, output_base_dir="../data/mi_summaries"):
     """
