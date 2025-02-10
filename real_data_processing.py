@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import time
 from core.mutual_information_1 import *
 
@@ -13,9 +12,9 @@ def ensure_directory_exists(directory_path):
     """
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
-        print(f"Directory created: {directory_path}")
+        print(f"\nDirectory created: {directory_path}")
     else:
-        print(f"Directory {directory_path} already existed. You might have overwritten the data!")
+        print(f"\nDirectory {directory_path} already existed. You might have overwritten the data!")
 
 
 def import_raw_data(directory_path):
@@ -112,55 +111,57 @@ def real_data_processing_2(data_dict, name_dict, n, h, k):
         print(f'run time for {name}= {end/60} min')
 
 
+def get_valid_integer(prompt, default_value, min_value=None):
+    """Helper function to validate integer input with a default value."""
+    while True:
+        user_input = input(f"{prompt} (default {default_value}): ").strip()
+        if not user_input:
+            return default_value
+        try:
+            value = int(user_input)
+            if min_value is not None and value < min_value:
+                print(f"Value must be at least {min_value}. Try again.")
+                continue
+            return value
+        except ValueError:
+            print("Invalid input. Please enter a valid integer.")
+
 def get_user_parameters():
     """
-    Prompt the user to input parameters for the process with default values provided.
-
-    Parameters:
-        None (all parameters are requested interactively).
+    Prompt the user to input parameters for the process with input validation.
 
     Returns:
-        dict: A dictionary containing the following keys:
-            - n (int): Number of data points (default is 5000).
-            - h (int): Overlap parameter, based on user's choice between 'half overlapping' or 'no overlaps'.
-            - k (int): Parameter for mutual information calculation (default is 1).
+        tuple: (n, h, k) with valid integer values.
     """
     # Default values
     default_n = 5000
     default_k = 1
 
-    # Prompt for 'n' with a default value
-    try:
-        n = int(input(f"\nEnter the value for 'n' (default {default_n}): ") or default_n)
-    except ValueError:
-        print(f"Invalid input. Using default value for 'n': {default_n}")
-        n = default_n
+    # Prompt for 'n' with validation
+    n = get_valid_integer("\nEnter the value for 'n'", default_n, min_value=1)
 
-    # Prompt for 'h' with options
-    print("\nChoose the overlap type for 'h':")
-    print("1 - Half overlapping")
-    print("2 - No overlaps")
-    try:
-        h_choice = int(input("Enter your choice (1 or 2, default 1): ") or 1)
-        if h_choice == 1:
+    # Prompt for 'h' with options and validation
+    while True:
+        print("\nChoose the overlap type:")
+        print("1 - Half overlapping")
+        print("2 - No overlaps")
+        h_choice = input("Enter your choice (1 or 2, default 1): ").strip()
+        if not h_choice:
             h = n // 2
-        elif h_choice == 2:
-            h = n // 1
+            break
+        elif h_choice == "1":
+            h = n // 2
+            break
+        elif h_choice == "2":
+            h = n
+            break
         else:
-            print("Invalid choice. Defaulting to 'half overlapping' (h = n // 2).")
-            h = n // 2
-    except ValueError:
-        print("Invalid input. Defaulting to 'half overlapping' (h = n // 2).")
-        h = n // 2
+            print("Invalid choice. Please enter 1 or 2.")
 
-    # Prompt for 'k' with a default value
-    try:
-        k = int(input(f"\nEnter the value for 'k' (default {default_k}): ") or default_k)
-    except ValueError:
-        print(f"Invalid input. Using default value for 'k': {default_k}")
-        k = default_k
+    # Prompt for 'k' with validation
+    k = get_valid_integer("\nEnter the value for 'k'", default_k, min_value=1)
 
-    return n, h, k 
+    return n, h, k
 
 
 if __name__ == "__main__":
