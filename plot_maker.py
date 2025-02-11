@@ -179,13 +179,13 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
             with open(file, 'r') as f:
                 # Skip the header (first row)
                 next(f)
-                
+
                 # Loop to read each line from the file
                 for line in f:
                     # Convert the line into a float array
                     row = np.fromstring(line, sep=' ')
                     second_column_value = row[1]  # The second column (index 1)
-                    
+
                     # Check if the second column is infinite (infinity) or NaN
                     if not np.isinf(second_column_value) and not np.isnan(second_column_value):
                         valid_data.append(row)  # Add the row to the list if it's valid
@@ -196,7 +196,7 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
             # Separate the columns
             first_column = data_cleaned[:, 0]
             means = data_cleaned[:, 1]
-            sigmas = data_cleaned[:, 2]
+            sigmas = data_cleaned[:, 3]
 
             # If mi_estimate is "mi_binning", the first value represents bins_number
             # Otherwise, it represents k_vals
@@ -386,7 +386,7 @@ def process_figure_7_9(files, distribution_name, mi_estimate, figure, log_transf
                 # Separate the columns
                 first_column = data_cleaned[:, 0]
                 means = data_cleaned[:, 1]
-                sigmas = data_cleaned[:, 2]
+                sigmas = data_cleaned[:, 3]
 
                 for i in range(len(first_column)):
                     if int(first_column[i]) == k_choice:
@@ -632,7 +632,7 @@ def process_figure_20(files, distribution_name, mi_estimators, log_transformed):
             # Separate the columns
             first_column = data_cleaned[:, 0]
             means = data_cleaned[:, 1]
-            sigmas = data_cleaned[:, 2]
+            sigmas = data_cleaned[:, 3]
 
             for i in range(len(first_column)):
                 if int(first_column[i]) == k_bins_choice:
@@ -758,7 +758,6 @@ def process_figure_21(files, distribution_name, mi_estimators, log_transformed):
 
         for param_value in sorted(filtered_files[idx].keys()):
             files_for_param_value = filtered_files[idx][param_value]
-            x_vals.append(param_value)  # Parameter value will be on the x-axis
 
             for file in files_for_param_value:
                 # List to store valid data
@@ -785,15 +784,15 @@ def process_figure_21(files, distribution_name, mi_estimators, log_transformed):
                 # Separate the columns
                 first_column = data_cleaned[:, 0]
                 means = data_cleaned[:, 1]
-                sigmas = data_cleaned[:, 2]
+                sigmas = data_cleaned[:, 3]
 
                 for i in range(len(first_column)):
                     if int(first_column[i]) == k_bins_choice:
                         # Compute the theoretical MI
+                        x_vals.append(param_value)  # Parameter value will be on the x-axis
                         theoretical_mi = theoretical_mi_values.get(param_value, 1)
                         y_vals.append(float(means[i]) / theoretical_mi)
                         y_err.append(float(sigmas[i]) / np.abs(theoretical_mi))
-
 
         # Plot the ratio I_est / I_theoretical for the current estimator with error bars
         plt.errorbar(x_vals, y_vals, yerr=y_err, label=mi_estimate, marker='.', linestyle='--', alpha=0.7)
