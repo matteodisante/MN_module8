@@ -41,7 +41,7 @@ def mutual_information_1_entropies_sum(dataset, k):
 	mi = ( 
 	(n_variables - 1) * (digamma(n_samples) - digamma(k)) 
 	+ np.sum(entropy_marginal_means) 
-	- n_variables*np.mean(np.log(epsilon_joint)) 
+	- n_variables*np.mean(np.log(np.maximum(epsilon_joint, 1e-10))) 
 	)	
 	
 	return mi
