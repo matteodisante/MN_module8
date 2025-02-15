@@ -40,7 +40,7 @@ def compute_marginal_counts(matrix, epsilon):
     For each sample, counts how many points are within a specified distance threshold (epsilon/2).
 
     Parameters:
-        matrix (2D array-like): Input data for a single variable, reshaped as a column vector of shape (n_samples, 1).
+        matrix (1D array-like): Input data for a single variable, reshaped as a column vector of shape (n_samples, 1).
         epsilon (1D array-like): Distance thresholds for each sample, provided as a vector.
 
     Returns:
@@ -49,18 +49,20 @@ def compute_marginal_counts(matrix, epsilon):
     try:
         logging.info(f"Computing marginal counts with epsilon values: {epsilon}")
 
-        # Ensure the input matrix is in 2D format
+        # Ensure the input matrix is in (n_samples, 1) format
         matrix = matrix.reshape(-1, 1)
         n_samples = matrix.shape[0]
         marginal_counts = np.zeros(n_samples)
 
-        # Initialize NearestNeighbors with a fixed radius (max epsilon)
-        nbrs = NearestNeighbors(radius=np.max(epsilon) / 2, metric='euclidean', algorithm='ball_tree').fit(matrix)
+        # Initialize NearestNeighbors 
+        nbrs = NearestNeighbors(metric='euclidean', algorithm='ball_tree').fit(matrix)
 
-        # Query the neighbors within the radius for all points
+        # Query the neighbors within the radius for all points 
+        # nbrs.radius_neighbors doens't count the central point
+        # nbrs.radius_neighbors actually counts the point on the edge but substracting 1e-12 to radius able us to ignore the counting of the border point
         for i in range(n_samples):
-            distances, _ = nbrs.radius_neighbors(matrix[i].reshape(1, -1), radius=epsilon[i] / 2)
-            marginal_counts[i] = len(distances[0]) - 1  # Exclude the point itself
+            distances, _ = nbrs.radius_neighbors(matrix[i].reshape(1, -1), radius = (epsilon[i]/2 - 1e-12) ) 
+            marginal_counts[i] = len(distances[0]) 
 
         logging.info(f"Marginal counts computed for {n_samples} samples.")
         return marginal_counts
