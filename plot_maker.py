@@ -41,6 +41,33 @@ def get_user_choice(options, prompt):
                 return options[choice - 1]
         print("Invalid choice. Please try again.")
 
+def get_user_choices(options, prompt, multiple=False):
+    """Asks the user to choose one or more valid options."""
+    while True:
+        print(prompt)
+        for idx, option in enumerate(options, 1):
+            print(f"{idx}. {option}")
+        
+        if multiple:
+            choice_input = input("Enter the corresponding numbers separated by commas (e.g., 1, 3): ")
+            # Parse the input into a list of integers
+            try:
+                choices = [int(x.strip()) for x in choice_input.split(',')]
+                if all(1 <= choice <= len(options) for choice in choices):
+                    return [options[choice - 1] for choice in choices]
+                else:
+                    print("Some choices are out of range. Please try again.")
+            except ValueError:
+                print("Invalid input. Please enter numbers separated by commas.")
+        else:
+            choice = input("Enter the corresponding number: ")
+            if choice.isdigit():
+                choice = int(choice)
+                if 1 <= choice <= len(options):
+                    return options[choice - 1]
+            print("Invalid choice. Please try again.")
+
+
 def select_files_by_extension(start_path=".", file_extension=".txt"):
     """Selects all files with a specified extension from the given directory and its subdirectories."""
     selected_paths = []
@@ -175,23 +202,34 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
             # List to store valid data
             valid_data = []
 
-            # Open the file
             with open(file, 'r') as f:
                 # Skip the header (first row)
                 next(f)
 
                 # Loop to read each line from the file
                 for line in f:
-                    # Convert the line into a float array
+                    # Strip any leading/trailing whitespace
+                    line = line.strip()
+                    
+                    # Skip empty lines
+                    if not line:
+                        continue
+                    
+                    # Convert the line into a float array (split by whitespace or tab)
                     row = np.fromstring(line, sep=' ')
-                    second_column_value = row[1]  # The second column (index 1)
 
-                    # Check if the second column is infinite (infinity) or NaN
-                    if not np.isinf(second_column_value) and not np.isnan(second_column_value):
-                        valid_data.append(row)  # Add the row to the list if it's valid
+                    # Ensure the row has at least 4 columns (since you expect 4 values per row)
+                    if row.size >= 4:
+                        second_column_value = row[1]  # The second column (index 1)
+
+                        # Check if the second column is not infinity or NaN
+                        if not np.isinf(second_column_value) and not np.isnan(second_column_value):
+                            valid_data.append(row)  # Add the row to the list if it's valid
+                    else:
+                        print(f"Skipping line due to insufficient columns: {line}")
 
             # Convert the valid data into a numpy array
-            data_cleaned = np.array(valid_data).reshape(-1, 3)
+            data_cleaned = np.array(valid_data).reshape(-1, 4)
 
             # Separate the columns
             first_column = data_cleaned[:, 0]
@@ -289,9 +327,47 @@ def process_figure_4(files, distribution_name, mi_estimate, log_transformed):
         print(f"No theoretical function found for {distribution_name}.")
         theoretical_mi = None
 
-    # Make the plot
-    plot_figure_4(filtered_files, distribution_name, mi_estimate, theoretical_mi, log_transformed)
+    # Step 1: Ask the user whether they want to choose one or more N, or plot all available N values
+    if not filtered_files:
+        print("No files available after filtering.")
+        return
 
+    # Step 2: Extract all unique values of N from the filtered files
+    N_values = set()
+    for file in filtered_files:
+        match = re.search(r"size_(\d+)", os.path.basename(file))
+        if match:
+            N_values.add(int(match.group(1)))
+
+    if not N_values:
+        print("No valid N values found in the filtered files.")
+        return
+
+    # Ask the user what they want to do before proceeding with N extraction
+    print(f"Available N values: {sorted(N_values)}")
+    choice = input("Do you want to (1) Choose one or more values of N or (2) Plot all available N values? (Enter 1 or 2): ").strip()
+
+    if choice == '1':
+            # Step 3: User selects one or more N values
+            chosen_Ns = get_user_choices(list(N_values), f"Choose one or more values for N from the available options (comma separated):", multiple=True)
+
+            # Filter the files again based on the chosen Ns
+            final_filtered_files = [file for file in filtered_files if any(f"size_{chosen_N}_" in os.path.basename(file) for chosen_N in chosen_Ns)]
+            print(f"Selected files for N={chosen_Ns}:")
+            for file in final_filtered_files:
+                print(file)
+
+    elif choice == '2':
+        # Step 4: Plot all N values (no filtering by N)
+        final_filtered_files = filtered_files
+        print("Plotting all available N values...")
+
+    else:
+        print("Invalid choice. Please enter 1 or 2.")
+        return
+
+    # Make the plot
+    plot_figure_4(final_filtered_files, distribution_name, mi_estimate, theoretical_mi, log_transformed)
 
 
 
@@ -370,18 +446,33 @@ def process_figure_7_9(files, distribution_name, mi_estimate, figure, log_transf
                 # List to store valid data
                 valid_data = []
                 with open(file, 'r') as f:
-                    next(f)  # Skip the header
+                    # Skip the header (first row)
+                    next(f)
+
+                    # Loop to read each line from the file
                     for line in f:
-                        # Convert the line into a float array
-                        row = np.fromstring(line, sep=' ')
-                        second_column_value = row[1]  # The second column (index 1)
+                        # Strip any leading/trailing whitespace
+                        line = line.strip()
                         
-                        # Check if the second column is infinite (infinity) or NaN
-                        if not np.isinf(second_column_value) and not np.isnan(second_column_value):
-                            valid_data.append(row)  # Add the row to the list if it's valid
+                        # Skip empty lines
+                        if not line:
+                            continue
+                        
+                        # Convert the line into a float array (split by whitespace or tab)
+                        row = np.fromstring(line, sep=' ')
+
+                        # Ensure the row has at least 4 columns (since you expect 4 values per row)
+                        if row.size >= 4:
+                            second_column_value = row[1]  # The second column (index 1)
+
+                            # Check if the second column is not infinity or NaN
+                            if not np.isinf(second_column_value) and not np.isnan(second_column_value):
+                                valid_data.append(row)  # Add the row to the list if it's valid
+                        else:
+                            print(f"Skipping line due to insufficient columns: {line}")
 
                 # Convert the valid data into a numpy array
-                data_cleaned = np.array(valid_data).reshape(-1, 3)
+                data_cleaned = np.array(valid_data).reshape(-1, 4)
 
                 # Separate the columns
                 first_column = data_cleaned[:, 0]
@@ -611,23 +702,34 @@ def process_figure_20(files, distribution_name, mi_estimators, log_transformed):
             # List to store valid data
             valid_data = []
 
-            # Open the file
             with open(file, 'r') as f:
                 # Skip the header (first row)
                 next(f)
-                
+
                 # Loop to read each line from the file
                 for line in f:
-                    # Convert the line into a float array
-                    row = np.fromstring(line, sep=' ')
-                    second_column_value = row[1]  # The second column (index 1)
+                    # Strip any leading/trailing whitespace
+                    line = line.strip()
                     
-                    # Check if the second column is infinite (infinity) or NaN
-                    if not np.isinf(second_column_value) and not np.isnan(second_column_value):
-                        valid_data.append(row)  # Add the row to the list if it's valid
+                    # Skip empty lines
+                    if not line:
+                        continue
+                    
+                    # Convert the line into a float array (split by whitespace or tab)
+                    row = np.fromstring(line, sep=' ')
+
+                    # Ensure the row has at least 4 columns (since you expect 4 values per row)
+                    if row.size >= 4:
+                        second_column_value = row[1]  # The second column (index 1)
+
+                        # Check if the second column is not infinity or NaN
+                        if not np.isinf(second_column_value) and not np.isnan(second_column_value):
+                            valid_data.append(row)  # Add the row to the list if it's valid
+                    else:
+                        print(f"Skipping line due to insufficient columns: {line}")
 
             # Convert the valid data into a numpy array
-            data_cleaned = np.array(valid_data).reshape(-1, 3)
+            data_cleaned = np.array(valid_data).reshape(-1, 4)
 
             # Separate the columns
             first_column = data_cleaned[:, 0]
@@ -763,23 +865,34 @@ def process_figure_21(files, distribution_name, mi_estimators, log_transformed):
                 # List to store valid data
                 valid_data = []
 
-                # Open the file
                 with open(file, 'r') as f:
                     # Skip the header (first row)
                     next(f)
-                    
+
                     # Loop to read each line from the file
                     for line in f:
-                        # Convert the line into a float array
-                        row = np.fromstring(line, sep=' ')
-                        second_column_value = row[1]  # The second column (index 1)
+                        # Strip any leading/trailing whitespace
+                        line = line.strip()
                         
-                        # Check if the second column is infinite (infinity) or NaN
-                        if not np.isinf(second_column_value) and not np.isnan(second_column_value):
-                            valid_data.append(row)  # Add the row to the list if it's valid
+                        # Skip empty lines
+                        if not line:
+                            continue
+                        
+                        # Convert the line into a float array (split by whitespace or tab)
+                        row = np.fromstring(line, sep=' ')
+
+                        # Ensure the row has at least 4 columns (since you expect 4 values per row)
+                        if row.size >= 4:
+                            second_column_value = row[1]  # The second column (index 1)
+
+                            # Check if the second column is not infinity or NaN
+                            if not np.isinf(second_column_value) and not np.isnan(second_column_value):
+                                valid_data.append(row)  # Add the row to the list if it's valid
+                        else:
+                            print(f"Skipping line due to insufficient columns: {line}")
 
                 # Convert the valid data into a numpy array
-                data_cleaned = np.array(valid_data).reshape(-1, 3)
+                data_cleaned = np.array(valid_data).reshape(-1, 4)
 
                 # Separate the columns
                 first_column = data_cleaned[:, 0]
