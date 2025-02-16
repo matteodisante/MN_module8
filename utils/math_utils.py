@@ -112,11 +112,7 @@ def ordered_wienman_exponential_mi_theoretical(theta):
     :param theta: Parameter of the distribution (0 < theta < 1 for the valid range)
     """
     if theta < 0.5:
-        mi_exact = (
-            np.log((2 * theta) / (1 - 2 * theta)) +
-            digamma(1 / (1 - 2 * theta)) -
-            digamma(1)
-        )
+        mi_exact = np.log((1 - 2 * theta) / (2 * theta)) + digamma(1 / (1 - 2 * theta)) - digamma(1)
     elif theta > 0.5:
         mi_exact = (
             np.log((2 * theta - 1) / theta) +
@@ -126,6 +122,9 @@ def ordered_wienman_exponential_mi_theoretical(theta):
     else:
         mi_exact = - digamma(1)
     return mi_exact
+
+
+
 
 
 def gamma_exponential_mi_theoretical(theta):
