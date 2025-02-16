@@ -376,26 +376,21 @@ def process_figure_7_9(files, distribution_name, mi_estimate, figure, log_transf
     """
     Manages the parameter selection and the k or number of bins for Figures 7 and 9, filters the corresponding files, and plots.
     """
-    # Extract the available k values from the files or bins if mi_estimate is "mi_binning"
-    if mi_estimate == "mi_binning":
-        bins_values = extract_k_or_bins_values_from_files(files)  # Function to extract bins from files
-        if not bins_values:
-            print("No bin values found in the files. Exiting.")
-            exit()
-        # User chooses the number of bins
-        bins_choice = get_user_choice(bins_values, "Choose the number of bins to use for the plot:")
-        print(f"You chose the number of bins: {bins_choice}")
-        k_choice = None  # In this case, k is not used
+    # Determine whether to ask for k or bins
+    if "binning" in mi_estimate.lower():
+        k_bins_values = extract_k_or_bins_values_from_files(files)  # Extract bins
+        param_type = "bins"
     else:
-        # Extract the available k values from the files
-        k_values = extract_k_or_bins_values_from_files(files)
-        if not k_values:
-            print("No k values found in the files. Exiting.")
-            exit()
-        # User chooses the value of k
-        k_choice = get_user_choice(k_values, "Choose the value of k to use for the plot:")
-        print(f"You chose the value of k: {k_choice}")
-        bins_choice = None  # In this case, bins are not used
+        k_bins_values = extract_k_or_bins_values_from_files(files)  # Extract k
+        param_type = "k"
+
+    if not k_bins_values:
+        print(f"No {param_type} values found for {mi_estimate}. Exiting.")
+        exit()
+
+    # The user chooses the value of k or bins based on the MI method
+    k_bins_choice = get_user_choice(k_bins_values, f"Choose the value of {param_type} to use for the plot (for {mi_estimate}):")
+
 
     # Extract parameters from the files
     all_parameters, extracted_params_per_file = extract_parameters_from_paths(files, distribution_name, mi_estimate, log_transformed)
@@ -481,7 +476,7 @@ def process_figure_7_9(files, distribution_name, mi_estimate, figure, log_transf
                 sigmas = data_cleaned[:, 3]
 
                 for i in range(len(first_column)):
-                    if int(first_column[i]) == k_choice:
+                    if int(first_column[i]) == k_bins_choice:
                         match = re.search(r"size_(\d+)", file)
                         if match:
                             N = int(match.group(1))
@@ -495,20 +490,52 @@ def process_figure_7_9(files, distribution_name, mi_estimate, figure, log_transf
 
         elif figure == "9":
             for file in file_list:
-                with open(file, 'r') as f:
-                    next(f)  # Skip the header
-                    for line in f:
-                        columns = line.strip().split()
-                        if columns and ((k_choice and int(columns[0]) == k_choice) or (bins_choice and int(columns[0]) == bins_choice)):
+                    # List to store valid data
+                    valid_data = []
+                    with open(file, 'r') as f:
+                        # Skip the header (first row)
+                        next(f)
+
+                        # Loop to read each line from the file
+                        for line in f:
+                            # Strip any leading/trailing whitespace
+                            line = line.strip()
+                            
+                            # Skip empty lines
+                            if not line:
+                                continue
+                            
+                            # Convert the line into a float array (split by whitespace or tab)
+                            row = np.fromstring(line, sep=' ')
+
+                            # Ensure the row has at least 4 columns (since you expect 4 values per row)
+                            if row.size >= 4:
+                                second_column_value = row[1]  # The second column (index 1)
+
+                                # Check if the second column is not infinity or NaN
+                                if not np.isinf(second_column_value) and not np.isnan(second_column_value):
+                                    valid_data.append(row)  # Add the row to the list if it's valid
+                            else:
+                                print(f"Skipping line due to insufficient columns: {line}")
+
+                    # Convert the valid data into a numpy array
+                    data_cleaned = np.array(valid_data).reshape(-1, 4)
+
+                    # Separate the columns
+                    first_column = data_cleaned[:, 0]
+                    means = data_cleaned[:, 1]
+                    sigmas = data_cleaned[:, 3]
+
+
+                    for i in range(len(first_column)):
+                        if int(first_column[i]) == k_bins_choice:
                             match = re.search(r"size_(\d+)", file)
                             if match:
                                 N = int(match.group(1))
                                 # If theoretical mutual information is valid, add points
-                                x_vals.append(1/ N)
-                                # Subtract theoretical mutual information from mean (y_vals)
-                                y_vals.append(float(columns[1]) - theoretical_mi)
-                                # Keep error the same (y_errs)
-                                y_errs.append(float(columns[2]))
+                                x_vals.append(1/N)
+                                y_vals.append(float(means[i]) - theoretical_mi)
+                                y_errs.append(float(sigmas[i]))
                             else:
                                 print(f"Warning: unable to extract N from file name {file}")
 
@@ -520,8 +547,8 @@ def process_figure_7_9(files, distribution_name, mi_estimate, figure, log_transf
 
         # Plot with error bars using the same color
         plt.errorbar(x_vals, y_vals, yerr=y_errs, fmt='.', linestyle='--', capsize=1, alpha = 0.7, label=param_value)
-
-    plt.xlabel(f"{bins_choice}/N" if mi_estimate == "mi_binning" else f"{k_choice}/N", fontsize=15)
+    plt.xscale('log')
+    plt.xlabel(f"1/N", fontsize=15)
 
     # Map to transform mi_estimate into the subscript format
     subscript_map = {
@@ -595,8 +622,42 @@ def process_figure_8(files, distribution_name, mi_estimate, log_transformed):
         if match:
             N = int(match.group(2))  # Extract N from the file name
 
-            # Load the data
-            x_vals, means, sigmas = np.loadtxt(file, skiprows=1, unpack=True)
+            # List to store valid data
+            valid_data = []
+
+            with open(file, 'r') as f:
+                # Skip the header (first row)
+                next(f)
+
+                # Loop to read each line from the file
+                for line in f:
+                    # Strip any leading/trailing whitespace
+                    line = line.strip()
+                    
+                    # Skip empty lines
+                    if not line:
+                        continue
+                    
+                    # Convert the line into a float array (split by whitespace or tab)
+                    row = np.fromstring(line, sep=' ')
+
+                    # Ensure the row has at least 4 columns (since you expect 4 values per row)
+                    if row.size >= 4:
+                        second_column_value = row[1]  # The second column (index 1)
+
+                        # Check if the second column is not infinity or NaN
+                        if not np.isinf(second_column_value) and not np.isnan(second_column_value):
+                            valid_data.append(row)  # Add the row to the list if it's valid
+                    else:
+                        print(f"Skipping line due to insufficient columns: {line}")
+
+            # Convert the valid data into a numpy array
+            data_cleaned = np.array(valid_data).reshape(-1, 4)
+
+            # Separate the columns
+            x_vals = data_cleaned[:, 0]
+            means = data_cleaned[:, 1]
+            sigmas = data_cleaned[:, 3]
 
             # Look for the chosen k value in the data and get the corresponding standard deviation
             if k_or_bins_choice in x_vals:
@@ -617,6 +678,7 @@ def process_figure_8(files, distribution_name, mi_estimate, log_transformed):
     # Plot the standard deviation as a function of N
     plt.figure(figsize=(8, 6))
     plt.plot(N_values_sorted, sigma_values_sorted, linestyle='--', marker='.', color='b', label=f'Sigma for {k_or_bins_name}={k_or_bins_choice}')
+    plt.xscale('log')
     plt.xlabel('N', fontsize=11)
     plt.ylabel('Standard Deviation', fontsize=11)
     plt.grid(True, linestyle='--', alpha=0.6)
@@ -748,7 +810,7 @@ def process_figure_20(files, distribution_name, mi_estimators, log_transformed):
                     else:
                         print(f"Warning: unable to extract N from file name {file}")
 
-        
+
         # Sort data by x (N)
         sorted_indices = np.argsort(x_vals)
         x_vals = np.array(x_vals)[sorted_indices]
@@ -770,7 +832,7 @@ def process_figure_20(files, distribution_name, mi_estimators, log_transformed):
 
     # Set the title with distribution name and extracted parameter
     plt.title(title, fontsize=15)
-
+    plt.xscale('log')
     plt.xlabel(r"1/N", fontsize=15)
     plt.ylabel(r"$\mathrm{I}_{\mathrm{est}} / \mathrm{I}_{\mathrm{exact}}$", fontsize=15)
     plt.legend(title="MI Estimators", fontsize=11, loc='best')
@@ -916,7 +978,7 @@ def process_figure_21(files, distribution_name, mi_estimators, log_transformed):
     title = r"$\mathrm{" + formatted_distribution_name + r"}$"
     title += f" (N={N_choice})"
     plt.title(title, fontsize=15)
-
+    plt.xscale('log')
     plt.xlabel(rf"${selected_param}$", fontsize=15)
     plt.ylabel(r"$\mathrm{I}_{\mathrm{est}} / \mathrm{I}_{\mathrm{theoretical}}$", fontsize=15)
     plt.legend(title="MI Estimators", fontsize=11, loc='best')
