@@ -258,6 +258,7 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
         legend_labels.append(f'N={N}')
 
     # Customize the plot
+    plt.xscale('log')
     plt.xlabel(r"num $_{\mathrm{bins}}$ /N" if mi_estimate == "mi_binning" else "k/N", fontsize=15)
 
     # Plot the theoretical line without including it in the legend
