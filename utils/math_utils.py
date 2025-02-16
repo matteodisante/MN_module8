@@ -114,14 +114,11 @@ def ordered_wienman_exponential_mi_theoretical(theta):
     if theta < 0.5:
         mi_exact = np.log((1 - 2 * theta) / (2 * theta)) + digamma(1 / (1 - 2 * theta)) - digamma(1)
     elif theta > 0.5:
-        mi_exact = (
-            np.log((2 * theta - 1) / theta) +
-            digamma(2 * theta / (2 * theta - 1)) -
-            digamma(1)
-        )
+        mi_exact = np.log((2 * theta - 1) / (2 * theta)) + digamma((2 * theta) / (2 * theta - 1)) - digamma(1)
     else:
         mi_exact = - digamma(1)
     return mi_exact
+
 
 
 
