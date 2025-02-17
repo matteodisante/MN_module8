@@ -95,7 +95,7 @@ def save_values_to_file(file_path, keys, mi_results, key_label, mi_label):
     """
     existing_data = read_existing_values(file_path, key_label)
     for key, mi in zip(keys, mi_results):
-        existing_data[key] = mi
+        existing_data[key] = mi 
 
     sorted_data = sorted(existing_data.items())
 
@@ -245,21 +245,26 @@ def calculate_and_save_missing_values(dataset, output_file_path, missing_values,
 
     # Ensure the output directory exists
     os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
+    
+    mi_results = []
+    non_empty_bins_results = []
 
     # Calculate the missing values
     logging.info(f"Calculating missing {key_label} values for {os.path.basename(output_file_path)}: {missing_values}")
-    mi_results = []
+
     for value in missing_values:
         try:
-            result = mi_function(dataset, value)
-            mi_results.append(result)
+            mi, non_empty_cells = mi_function(dataset, value)
+            mi_results.append(mi)
+            non_empty_bins_results.append(non_empty_cells)
         except Exception as e:
             logging.error(f"Error calculating MI for {output_file_path}, {key_label}={value}: {str(e)}")
             mi_results.append(None)  # Use None to indicate an error
+            non_empty_bins_results.append(None)
 
     # Save the results
     try:
-        save_values_to_file(output_file_path, missing_values, mi_results, key_label, mi_label)
+        save_values_to_file(output_file_path, non_empty_bins_results, mi_results, key_label, mi_label)
         logging.info(f"Results saved successfully to: {output_file_path}")
     except Exception as e:
         logging.error(f"Error saving MI results to {output_file_path}: {str(e)}")
