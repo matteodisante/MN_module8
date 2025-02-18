@@ -23,7 +23,7 @@ def mutual_information_binning_adaptive(data, num_bins):
         binned_data = discretizer.fit_transform(data)
     except Exception as e:
         logging.error(f"Error in KBinsDiscretizer: {e}")
-        return None, None # If binning fails
+        return None, None, None, None, None # If binning fails
 
     # Compute joint histogram. It's ok just for (X,Y) in R2
     joint_hist, _, _ = np.histogram2d(binned_data[:, 0], binned_data[:, 1], bins=[num_bins, num_bins])
@@ -31,8 +31,10 @@ def mutual_information_binning_adaptive(data, num_bins):
     # Compute how many cells contain at least one point
     non_empty_cells = np.count_nonzero(joint_hist)
 
-    # Compute total number of cells
-    total_cells =  (len(discretizer.bin_edges_[0]) - 1) * (len(discretizer.bin_edges_[1]) - 1)  # Subtract 1 from each to get the number of intervals
+    # Compute the number of bins along x and y axis and the total number of cells
+    bins_x = len(discretizer.bin_edges_[0]) - 1
+    bins_y = len(discretizer.bin_edges_[1]) - 1
+    total_cells =  bins_x * bins_y  
     
     
     # Normalize joint histogram to get probabilities
@@ -52,9 +54,9 @@ def mutual_information_binning_adaptive(data, num_bins):
             mi = np.sum(np.where(valid_mask, joint_prob * np.log(joint_prob / outer_prob), 0))
     except Exception as e:
         logging.error(f"Error computing mutual information: {e}")
-        return None, None
+        return None, None, None, None, None
     
-    return mi, non_empty_cells
+    return mi, bins_x, bins_y, total_cells, non_empty_cells
 
 
 
