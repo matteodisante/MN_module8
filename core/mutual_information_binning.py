@@ -25,7 +25,7 @@ def mutual_information_binning_adaptive(data, num_bins):
         logging.error(f"Error in KBinsDiscretizer: {e}")
         return None, None # If binning fails
 
-    # Compute joint histogram
+    # Compute joint histogram. It's ok just for (X,Y) in R2
     joint_hist, _, _ = np.histogram2d(binned_data[:, 0], binned_data[:, 1], bins=[num_bins, num_bins])
 
     # Compute how many cells contain at least one point
