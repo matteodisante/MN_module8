@@ -52,43 +52,60 @@ def parse_k_values(k_input):
 
 
 
+
 def read_existing_values(file_path, key_label):
     """
-    Reads existing values (k or bin_size) from the file and returns them as a dictionary.
-
-    :param file_path: Path to the file containing existing values.
-    :param key_label: The label for the key column in the file (e.g., "k" or "bin_size").
-    :return: A dictionary where keys are values and values are corresponding mi values.
+    Reads existing values from a file and returns them as a dictionary.
+    
+    For mi_1 and mi_sum, it expects a header in the format "<key_label> mi...".  
+    For mi_binning (when key_label == "bins_asked_per_axis"), it expects the header:
+    "bins_asked_per_axis bins_x bins_y total_cells non_empty_cells mi_binning".  
+    In this case, it reads the first column (bins_asked_per_axis) from each line.
+    
+    :param file_path: Path to the file to read.
+    :param key_label: The key label to use ("k" or "bins_asked_per_axis").
+    :return: A dictionary of existing keys.
     """
     existing_values = {}
     if not os.path.exists(file_path):
-        logging.info(f"File not found: {file_path}. No values do exist.")
-        return existing_values  # Return an empty dictionary if the file doesn't exist
+        logging.info(f"File not found: {file_path}. No values exist.")
+        return existing_values
 
     with open(file_path, 'r') as file:
         header = file.readline().strip()
-        if not header.startswith(f"{key_label} mi"):
-            logging.warning(f"Formato header inaspettato in {file_path}: {header}")
-            return {}
-
-        for line in file:
-            try:
-                key, mi = line.strip().split()
-                existing_values[int(key)] = float(mi)
-            except ValueError:
-                logging.error(f"Linea malformata in {file_path}: {line.strip()}")
-
-    return existing_values
-
+        if key_label == "bins_asked_per_axis":
+            if not header.startswith("bins_asked_per_axis"):
+                logging.warning(f"Unexpected header format in {file_path}: {header}")
+                return {}
+            # Read the first column from each line (the already calculated bins_asked_per_axis)
+            for line in file:
+                try:
+                    parts = line.strip().split()
+                    key = int(parts[0])
+                    existing_values[key] = True  # The value is not used, only the key matters
+                except Exception as e:
+                    logging.error(f"Malformed line in {file_path}: {line.strip()}")
+            return existing_values
+        else:
+            if not header.startswith(f"{key_label} mi"):
+                logging.warning(f"Unexpected header format in {file_path}: {header}")
+                return {}
+            for line in file:
+                try:
+                    key, mi = line.strip().split()[:2]
+                    existing_values[int(key)] = float(mi)
+                except Exception as e:
+                    logging.error(f"Malformed line in {file_path}: {line.strip()}")
+            return existing_values
 
 
 
 def save_values_to_file(file_path, keys, mi_results, key_label, mi_label):
     """
-    Updates the file with new values (k or bin_size) while preserving existing values.
+    Saves the values for mi_1 and mi_sum in a file, with two columns (key and mi).
 
     :param file_path: Path to the output file.
-    :param keys: List of keys (k or bin_size) to save.
+    :param keys: List of keys (k or bins_number) to save.
     :param mi_results: List of mutual information values corresponding to the keys.
     :param key_label: The label for the key column in the file (e.g., "k" or "bin_size").
     :param mi_label: The label for the MI column in the file (e.g., "mi_1", "mi_sum", "mi_binning").
@@ -103,6 +120,23 @@ def save_values_to_file(file_path, keys, mi_results, key_label, mi_label):
         file.write(f"{key_label} {mi_label}\n")
         for key, mi in sorted_data:
             file.write(f"{key} {mi}\n")
+    print(f"Created/updated file saved to: {file_path}")
+
+
+
+
+def save_mi_binning_values_to_file(file_path, results_list):
+    """
+    Save the results of mutual_information_binning_adaptive to files with the following column structure:
+    bins_asked_per_axis, bins_x, bins_y, total_cells, non_empty_cells, mi_binning.
+    """
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    with open(file_path, 'w') as f:
+        # The header is setted accordingly to the wanted output datafile stucture
+        f.write("bins_asked_per_axis bins_x bins_y total_cells non_empty_cells mi_binning\n")
+        for row in results_list:
+            # Each row is a tuple: (bins_asked, bins_x, bins_y, total_cells, non_empty_cells, mi)
+            f.write(" ".join(map(str, row)) + "\n")
     print(f"Created/updated file saved to: {file_path}")
 
 
@@ -151,18 +185,13 @@ def calculate_missing_values_for_multiple_files(files, keys, mi_function, key_la
     logging.info("Trying loading files") 
     for file in files:
         try:
-            dataset = np.genfromtxt(file, delimiter=" ", skip_header=0)
-            #logging.info(f"Loaded Dataset: {file}, shape: {dataset.shape}")
-    
+            dataset = np.genfromtxt(file, delimiter=" ", skip_header=0)    
             if np.isnan(dataset).any():
                 logging.warning(f"WARNING: file {file} contains NaN! Skipping.")
                 continue
-        
         except Exception as e:
             logging.error(f"Errore while reading {file}: {str(e)}")
             continue 
-     
-    
 
         output_file_path = get_output_file_path(file, mi_function)
 
@@ -245,30 +274,39 @@ def calculate_and_save_missing_values(dataset, output_file_path, missing_values,
 
     # Ensure the output directory exists
     os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
-    
-    mi_results = []
-    non_empty_bins_results = []
 
-    # Calculate the missing values
-    logging.info(f"Calculating missing {key_label} values for {os.path.basename(output_file_path)}: {missing_values}")
 
-    for value in missing_values:
-        try:
-            mi, non_empty_cells = mi_function(dataset, value)
-            mi_results.append(mi)
-            non_empty_bins_results.append(non_empty_cells)
-        except Exception as e:
-            logging.error(f"Error calculating MI for {output_file_path}, {key_label}={value}: {str(e)}")
-            mi_results.append(None)  # Use None to indicate an error
-            non_empty_bins_results.append(None)
-
-    # Save the results
-    try:
-        save_values_to_file(output_file_path, non_empty_bins_results, mi_results, key_label, mi_label)
+    # Branch handling mi-binning case
+    if mi_function == mutual_information_binning_adaptive:
+        results_list = []  # each element will be formatted as: (bins_asked_per_axis, bins_x, bins_y, total_cells, non_empty_cells, mi_binning)
+        logging.info(f"Calculating missing {key_label} values for {os.path.basename(output_file_path)}: {missing_values}")
+        for value in missing_values:
+            try:
+                mi, bins_x, bins_y, total_cells, non_empty_cells = mi_function(dataset, value)
+                results_list.append((value, bins_x, bins_y, total_cells, non_empty_cells, mi))
+            except Exception as e:
+                logging.error(f"Error calculating MI for {output_file_path}, {key_label}={value}: {str(e)}")
+                results_list.append((value, None, None, None, None, None))
+        save_mi_binning_values_to_file(output_file_path, results_list)
         logging.info(f"Results saved successfully to: {output_file_path}")
-    except Exception as e:
-        logging.error(f"Error saving MI results to {output_file_path}: {str(e)}")
-
+    else:
+        #Branch handling mi-1 and mi-sum cases
+        mi_results = []
+        non_empty_bins_results = []
+        logging.info(f"Calculating missing {key_label} values for {os.path.basename(output_file_path)}: {missing_values}")
+        for value in missing_values:
+            try:
+                mi, non_empty_cells = mi_function(dataset, value)
+                mi_results.append(mi)
+                non_empty_bins_results.append(non_empty_cells)
+            except Exception as e:
+                logging.error(f"Error calculating MI for {output_file_path}, {key_label}={value}: {str(e)}")
+                mi_results.append(None)
+                non_empty_bins_results.append(None)
+        save_values_to_file(output_file_path, missing_values, mi_results, key_label, mi_label)
+        logging.info(f"Results saved successfully to: {output_file_path}")
+    
+    
     
     
     
