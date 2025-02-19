@@ -249,8 +249,8 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
                 means = data_cleaned[:, 4]
                 sigmas = data_cleaned[:, 6]
                 x_values = data_cleaned[:, 2]
-                xlolims = data_cleaned[:, 1].T
-                xuplims = data_cleaned[:, 3].T
+                xlolims = data_cleaned[:, 1]
+                xuplims = data_cleaned[:, 3]
             else:
                 # Convert the valid data into a numpy array
                 data_cleaned = np.array(valid_data).reshape(-1, 4)
@@ -262,13 +262,13 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
 
             # If mi_estimate is "mi_binning", the first value represents bins_number
             # Otherwise, it represents k_vals
-            x_vals = x_values / N
+
 
             if "binning" in mi_estimate.lower():
                 # Store the data in the dictionary, using N as the key
-                data_dict[N] = (x_vals, xlolims, xuplims, means, sigmas)
+                data_dict[N] = (x_values, xlolims, xuplims, means, sigmas)
             else: 
-                data_dict[N] = (x_vals, means, sigmas)
+                data_dict[N] = (x_values, means, sigmas)
 
     # Sort the dictionary by N in ascending order
     sorted_N_values = sorted(data_dict.keys())
@@ -280,18 +280,20 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
     # Plot the data for each sorted N value
     for N in sorted_N_values:
         if "binning" in mi_estimate.lower():
-            x_vals, xlolims, xuplims, means, sigmas = data_dict[N]
+            x_values, xlolims, xuplims, means, sigmas = data_dict[N]
         else:
-            x_vals, means, sigmas = data_dict[N]
+            x_values, means, sigmas = data_dict[N]
 
     if "binning" in mi_estimate.lower():
-        x_err_left = x_vals - xlolims
-        x_err_right = xuplims - x_vals
+        x_err_left = x_values - xlolims
+        print(x_err_left)
+        x_err_right = xuplims - x_values
+        print(x_err_right)
         x_errors = [x_err_left/N, x_err_right/N]
-        plt.errorbar(x_vals, means, yerr=sigmas, xerr=x_errors, linestyle='--', fmt='.', capsize=1, alpha=0.7, label=f'N={N}') 
+        plt.errorbar(x_values/N, means, yerr=sigmas, xerr=x_errors, linestyle='--', fmt='.', capsize=1, alpha=0.7, label=f'N={N}') 
         legend_labels.append(f'N={N}')
     else:
-        plt.errorbar(x_vals, means, yerr=sigmas, linestyle='--', fmt='.', capsize=1, alpha=0.7, label=f'N={N}')
+        plt.errorbar(x_values/N, means, yerr=sigmas, linestyle='--', fmt='.', capsize=1, alpha=0.7, label=f'N={N}')
         legend_labels.append(f'N={N}')
 
     # Customize the plot
