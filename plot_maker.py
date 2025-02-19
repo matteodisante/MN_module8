@@ -202,6 +202,7 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
             # List to store valid data
             valid_data = []
 
+
             with open(file, 'r') as f:
                 # Skip the header (first row)
                 next(f)
@@ -218,30 +219,56 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
                     # Convert the line into a float array (split by whitespace or tab)
                     row = np.fromstring(line, sep=' ')
 
-                    # Ensure the row has at least 4 columns (since you expect 4 values per row)
-                    if row.size >= 4:
-                        second_column_value = row[1]  # The second column (index 1)
+                    if "binning" in mi_estimate.lower():
+                        # Ensure the row has at least 7 columns (since you expect 7 values per row)
+                        if row.size >= 7:
+                            fifth_column_value = row[4]
 
-                        # Check if the second column is not infinity or NaN
-                        if not np.isinf(second_column_value) and not np.isnan(second_column_value):
-                            valid_data.append(row)  # Add the row to the list if it's valid
+                            # Check if it is not infinity or NaN
+                            if not np.isinf(fifth_column_value) and not np.isnan(fifth_column_value):
+                                valid_data.append(row)  # Add the row to the list if it's valid
+                        else:
+                            print(f"Skipping line due to insufficient columns: {line}")
                     else:
-                        print(f"Skipping line due to insufficient columns: {line}")
+                        # Ensure the row has at least 4 columns (since you expect 4 values per row)
+                        if row.size >= 4:
+                            second_column_value = row[1]  # The second column (index 1)
 
-            # Convert the valid data into a numpy array
-            data_cleaned = np.array(valid_data).reshape(-1, 4)
+                            # Check if the second column is not infinity or NaN
+                            if not np.isinf(second_column_value) and not np.isnan(second_column_value):
+                                valid_data.append(row)  # Add the row to the list if it's valid
+                        else:
+                            print(f"Skipping line due to insufficient columns: {line}")
 
-            # Separate the columns
-            first_column = data_cleaned[:, 0]
-            means = data_cleaned[:, 1]
-            sigmas = data_cleaned[:, 3]
+            if "binning" in mi_estimate.lower():
+                # Convert the valid data into a numpy array
+                data_cleaned = np.array(valid_data).reshape(-1, 7)
+
+                # Separate the columns
+                first_column = data_cleaned[:, 0]
+                means = data_cleaned[:, 4]
+                sigmas = data_cleaned[:, 6]
+                x_values = data_cleaned[:, 2]
+                xlolims = data_cleaned[:, 1]
+                xuplims = data_cleaned[:, 3]
+            else:
+                # Convert the valid data into a numpy array
+                data_cleaned = np.array(valid_data).reshape(-1, 4)
+
+                # Separate the columns
+                x_values = data_cleaned[:, 0]
+                means = data_cleaned[:, 1]
+                sigmas = data_cleaned[:, 3]
 
             # If mi_estimate is "mi_binning", the first value represents bins_number
             # Otherwise, it represents k_vals
-            x_vals = first_column / N
+            x_vals = x_values / N
 
-            # Store the data in the dictionary, using N as the key
-            data_dict[N] = (x_vals, means, sigmas)
+            if "binning" in mi_estimate.lower():
+                # Store the data in the dictionary, using N as the key
+                data_dict[N] = (x_vals, xlolims, xuplims, means, sigmas)
+            else: 
+                data_dict[N] = (x_vals, means, sigmas)
 
     # Sort the dictionary by N in ascending order
     sorted_N_values = sorted(data_dict.keys())
@@ -251,10 +278,13 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
 
     # Plot the data for each sorted N value
     for N in sorted_N_values:
-        x_vals, means, sigmas = data_dict[N]
+        if "binning" in mi_estimate.lower():
+            x_vals, xlolims, xuplims, means, sigmas = data_dict[N]
+        else:
+            x_vals, means, sigmas = data_dict[N]
 
         # Points with error bars of the same color
-        plt.errorbar(x_vals, means, yerr=sigmas, linestyle='--', fmt='.', capsize=1, alpha=0.7, label=f'N={N}')
+        plt.errorbar(x_vals, means, yerr=sigmas, xlolims=xlolims, xuplims=xuplims, linestyle='--', fmt='.', capsize=1, alpha=0.7, label=f'N={N}')
         legend_labels.append(f'N={N}')
 
     # Customize the plot
@@ -457,35 +487,69 @@ def process_figure_7_9(files, distribution_name, mi_estimate, figure, log_transf
                         # Convert the line into a float array (split by whitespace or tab)
                         row = np.fromstring(line, sep=' ')
 
-                        # Ensure the row has at least 4 columns (since you expect 4 values per row)
-                        if row.size >= 4:
-                            second_column_value = row[1]  # The second column (index 1)
+                        if "binning" in mi_estimate.lower():
+                            # Ensure the row has at least 7 columns (since you expect 7 values per row)
+                            if row.size >= 7:
+                                fifth_column_value = row[4]
 
-                            # Check if the second column is not infinity or NaN
-                            if not np.isinf(second_column_value) and not np.isnan(second_column_value):
-                                valid_data.append(row)  # Add the row to the list if it's valid
+                                # Check if it is not infinity or NaN
+                                if not np.isinf(fifth_column_value) and not np.isnan(fifth_column_value):
+                                    valid_data.append(row)  # Add the row to the list if it's valid
+                            else:
+                                print(f"Skipping line due to insufficient columns: {line}")
                         else:
-                            print(f"Skipping line due to insufficient columns: {line}")
+                            # Ensure the row has at least 4 columns (since you expect 4 values per row)
+                            if row.size >= 4:
+                                second_column_value = row[1]  # The second column (index 1)
 
-                # Convert the valid data into a numpy array
-                data_cleaned = np.array(valid_data).reshape(-1, 4)
+                                # Check if the second column is not infinity or NaN
+                                if not np.isinf(second_column_value) and not np.isnan(second_column_value):
+                                    valid_data.append(row)  # Add the row to the list if it's valid
+                            else:
+                                print(f"Skipping line due to insufficient columns: {line}")
 
-                # Separate the columns
-                first_column = data_cleaned[:, 0]
-                means = data_cleaned[:, 1]
-                sigmas = data_cleaned[:, 3]
+                if "binning" in mi_estimate.lower():
+                    # Convert the valid data into a numpy array
+                    data_cleaned = np.array(valid_data).reshape(-1, 7)
 
-                for i in range(len(first_column)):
-                    if int(first_column[i]) == k_bins_choice:
-                        match = re.search(r"size_(\d+)", file)
-                        if match:
-                            N = int(match.group(1))
-                            # If theoretical mutual information is valid, add points
-                            x_vals.append(1/N)
-                            y_vals.append(float(means[i]) / theoretical_mi)
-                            y_errs.append(float(sigmas[i]) / np.abs(theoretical_mi))
-                        else:
-                            print(f"Warning: unable to extract N from file name {file}")
+                    # Separate the columns
+                    first_column = data_cleaned[:, 0]
+                    means = data_cleaned[:, 4]
+                    sigmas = data_cleaned[:, 6]
+                    x_values = data_cleaned[:, 2]
+
+                    for i in range(len(first_column)):
+                        if int(first_column[i]) == k_bins_choice:
+                            match = re.search(r"size_(\d+)", file)
+                            if match:
+                                N = int(match.group(1))
+                                # If theoretical mutual information is valid, add points
+                                x_vals.append(1/N)
+                                y_vals.append(float(means[i]) / theoretical_mi)
+                                y_errs.append(float(sigmas[i]) / np.abs(theoretical_mi))
+                            else:
+                                print(f"Warning: unable to extract N from file name {file}")
+
+                else:
+                    # Convert the valid data into a numpy array
+                    data_cleaned = np.array(valid_data).reshape(-1, 4)
+
+                    # Separate the columns
+                    first_column = data_cleaned[:, 0]
+                    means = data_cleaned[:, 1]
+                    sigmas = data_cleaned[:, 3]
+
+                    for i in range(len(first_column)):
+                        if int(first_column[i]) == k_bins_choice:
+                            match = re.search(r"size_(\d+)", file)
+                            if match:
+                                N = int(match.group(1))
+                                # If theoretical mutual information is valid, add points
+                                x_vals.append(1/N)
+                                y_vals.append(float(means[i]) / theoretical_mi)
+                                y_errs.append(float(sigmas[i]) / np.abs(theoretical_mi))
+                            else:
+                                print(f"Warning: unable to extract N from file name {file}")
 
 
         elif figure == "9":
@@ -508,36 +572,70 @@ def process_figure_7_9(files, distribution_name, mi_estimate, figure, log_transf
                             # Convert the line into a float array (split by whitespace or tab)
                             row = np.fromstring(line, sep=' ')
 
-                            # Ensure the row has at least 4 columns (since you expect 4 values per row)
-                            if row.size >= 4:
-                                second_column_value = row[1]  # The second column (index 1)
+                            if "binning" in mi_estimate.lower():
+                                # Ensure the row has at least 7 columns (since you expect 7 values per row)
+                                if row.size >= 7:
+                                    fifth_column_value = row[4]
 
-                                # Check if the second column is not infinity or NaN
-                                if not np.isinf(second_column_value) and not np.isnan(second_column_value):
-                                    valid_data.append(row)  # Add the row to the list if it's valid
+                                    # Check if it is not infinity or NaN
+                                    if not np.isinf(fifth_column_value) and not np.isnan(fifth_column_value):
+                                        valid_data.append(row)  # Add the row to the list if it's valid
+                                else:
+                                    print(f"Skipping line due to insufficient columns: {line}")
                             else:
-                                print(f"Skipping line due to insufficient columns: {line}")
+                                # Ensure the row has at least 4 columns (since you expect 4 values per row)
+                                if row.size >= 4:
+                                    second_column_value = row[1]  # The second column (index 1)
 
-                    # Convert the valid data into a numpy array
-                    data_cleaned = np.array(valid_data).reshape(-1, 4)
+                                    # Check if the second column is not infinity or NaN
+                                    if not np.isinf(second_column_value) and not np.isnan(second_column_value):
+                                        valid_data.append(row)  # Add the row to the list if it's valid
+                                else:
+                                    print(f"Skipping line due to insufficient columns: {line}")
 
-                    # Separate the columns
-                    first_column = data_cleaned[:, 0]
-                    means = data_cleaned[:, 1]
-                    sigmas = data_cleaned[:, 3]
+                    if "binning" in mi_estimate.lower():
+                        # Convert the valid data into a numpy array
+                        data_cleaned = np.array(valid_data).reshape(-1, 7)
 
+                        # Separate the columns
+                        first_column = data_cleaned[:, 0]
+                        means = data_cleaned[:, 4]
+                        sigmas = data_cleaned[:, 6]
+                        x_values = data_cleaned[:, 2]
 
-                    for i in range(len(first_column)):
-                        if int(first_column[i]) == k_bins_choice:
-                            match = re.search(r"size_(\d+)", file)
-                            if match:
-                                N = int(match.group(1))
-                                # If theoretical mutual information is valid, add points
-                                x_vals.append(1/N)
-                                y_vals.append(float(means[i]) - theoretical_mi)
-                                y_errs.append(float(sigmas[i]))
-                            else:
-                                print(f"Warning: unable to extract N from file name {file}")
+                        for i in range(len(first_column)):
+                            if int(first_column[i]) == k_bins_choice:
+                                match = re.search(r"size_(\d+)", file)
+                                if match:
+                                    N = int(match.group(1))
+                                    # If theoretical mutual information is valid, add points
+                                    x_vals.append(1/N)
+                                    y_vals.append(float(means[i]) - theoretical_mi)
+                                    y_errs.append(float(sigmas[i]))
+                                else:
+                                    print(f"Warning: unable to extract N from file name {file}")
+
+                    else:
+                        # Convert the valid data into a numpy array
+                        data_cleaned = np.array(valid_data).reshape(-1, 4)
+
+                        # Separate the columns
+                        first_column = data_cleaned[:, 0]
+                        means = data_cleaned[:, 1]
+                        sigmas = data_cleaned[:, 3]
+
+                        for i in range(len(first_column)):
+                            if int(first_column[i]) == k_bins_choice:
+                                match = re.search(r"size_(\d+)", file)
+                                if match:
+                                    N = int(match.group(1))
+                                    # If theoretical mutual information is valid, add points
+                                    x_vals.append(1/N)
+                                    y_vals.append(float(means[i]) - theoretical_mi)
+                                    y_errs.append(float(sigmas[i]))
+                                else:
+                                    print(f"Warning: unable to extract N from file name {file}")
+
 
         # Sort the data by x
         sorted_indices = np.argsort(x_vals)
@@ -641,23 +739,42 @@ def process_figure_8(files, distribution_name, mi_estimate, log_transformed):
                     # Convert the line into a float array (split by whitespace or tab)
                     row = np.fromstring(line, sep=' ')
 
-                    # Ensure the row has at least 4 columns (since you expect 4 values per row)
-                    if row.size >= 4:
-                        second_column_value = row[1]  # The second column (index 1)
 
-                        # Check if the second column is not infinity or NaN
-                        if not np.isinf(second_column_value) and not np.isnan(second_column_value):
-                            valid_data.append(row)  # Add the row to the list if it's valid
+                    if "binning" in mi_estimate.lower():
+                        # Ensure the row has at least 7 columns (since you expect 7 values per row)
+                        if row.size >= 7:
+                            fifth_column_value = row[4]
+
+                            # Check if it is not infinity or NaN
+                            if not np.isinf(fifth_column_value) and not np.isnan(fifth_column_value):
+                                valid_data.append(row)  # Add the row to the list if it's valid
+                        else:
+                            print(f"Skipping line due to insufficient columns: {line}")
                     else:
-                        print(f"Skipping line due to insufficient columns: {line}")
+                        # Ensure the row has at least 4 columns (since you expect 4 values per row)
+                        if row.size >= 4:
+                            second_column_value = row[1]  # The second column (index 1)
 
-            # Convert the valid data into a numpy array
-            data_cleaned = np.array(valid_data).reshape(-1, 4)
+                            # Check if the second column is not infinity or NaN
+                            if not np.isinf(second_column_value) and not np.isnan(second_column_value):
+                                valid_data.append(row)  # Add the row to the list if it's valid
+                        else:
+                            print(f"Skipping line due to insufficient columns: {line}")
 
-            # Separate the columns
-            x_vals = data_cleaned[:, 0]
-            means = data_cleaned[:, 1]
-            sigmas = data_cleaned[:, 3]
+            if "binning" in mi_estimate.lower():
+                # Convert the valid data into a numpy array
+                data_cleaned = np.array(valid_data).reshape(-1, 7)
+
+                # Separate the columns
+                x_vals = data_cleaned[:, 0]
+                sigmas = data_cleaned[:, 6]
+            else:
+                # Convert the valid data into a numpy array
+                data_cleaned = np.array(valid_data).reshape(-1, 4)
+
+                # Separate the columns
+                x_vals = data_cleaned[:, 0]
+                sigmas = data_cleaned[:, 3]
 
             # Look for the chosen k value in the data and get the corresponding standard deviation
             if k_or_bins_choice in x_vals:
@@ -758,7 +875,7 @@ def process_figure_20(files, distribution_name, mi_estimators, log_transformed):
         # The user chooses the value of k or bins based on the MI method
         k_bins_choice = get_user_choice(k_bins_values, f"Choose the value of {param_type} to use for the plot (for {mi_estimate}):")
 
-        x_vals, y_vals, y_errs = [], [], []
+        x_vals, y_vals, y_errs, xmin, xmax = [], [], [], [], []
         
         # Process files and extract data
         for file in filtered_files[idx]:
@@ -781,44 +898,89 @@ def process_figure_20(files, distribution_name, mi_estimators, log_transformed):
                     # Convert the line into a float array (split by whitespace or tab)
                     row = np.fromstring(line, sep=' ')
 
-                    # Ensure the row has at least 4 columns (since you expect 4 values per row)
-                    if row.size >= 4:
-                        second_column_value = row[1]  # The second column (index 1)
+                    if "binning" in mi_estimate.lower():
+                        # Ensure the row has at least 7 columns (since you expect 7 values per row)
+                        if row.size >= 7:
+                            fifth_column_value = row[4]
 
-                        # Check if the second column is not infinity or NaN
-                        if not np.isinf(second_column_value) and not np.isnan(second_column_value):
-                            valid_data.append(row)  # Add the row to the list if it's valid
+                            # Check if it is not infinity or NaN
+                            if not np.isinf(fifth_column_value) and not np.isnan(fifth_column_value):
+                                valid_data.append(row)  # Add the row to the list if it's valid
+                        else:
+                            print(f"Skipping line due to insufficient columns: {line}")
                     else:
-                        print(f"Skipping line due to insufficient columns: {line}")
+                        # Ensure the row has at least 4 columns (since you expect 4 values per row)
+                        if row.size >= 4:
+                            second_column_value = row[1]  # The second column (index 1)
 
-            # Convert the valid data into a numpy array
-            data_cleaned = np.array(valid_data).reshape(-1, 4)
+                            # Check if the second column is not infinity or NaN
+                            if not np.isinf(second_column_value) and not np.isnan(second_column_value):
+                                valid_data.append(row)  # Add the row to the list if it's valid
+                        else:
+                            print(f"Skipping line due to insufficient columns: {line}")
 
-            # Separate the columns
-            first_column = data_cleaned[:, 0]
-            means = data_cleaned[:, 1]
-            sigmas = data_cleaned[:, 3]
+            if "binning" in mi_estimate.lower():
+                # Convert the valid data into a numpy array
+                data_cleaned = np.array(valid_data).reshape(-1, 7)
 
-            for i in range(len(first_column)):
-                if int(first_column[i]) == k_bins_choice:
-                    match = re.search(r"size_(\d+)", file)
-                    if match:
-                        N = int(match.group(1))
-                        x_vals.append(1/N)
-                        y_vals.append(float(means[i]) / theoretical_mi)
-                        y_errs.append(float(sigmas[i]) / np.abs(theoretical_mi))
-                    else:
-                        print(f"Warning: unable to extract N from file name {file}")
+                # Separate the columns
+                first_column = data_cleaned[:, 0]
+                means = data_cleaned[:, 4]
+                sigmas = data_cleaned[:, 6]
+                xlolims = data_cleaned[:, 1]
+                xuplims = data_cleaned[:, 3]
+                for i in range(len(first_column)):
+                    if int(first_column[i]) == k_bins_choice:
+                        match = re.search(r"size_(\d+)", file)
+                        if match:
+                            N = int(match.group(1))
+                            x_vals.append(1/N)
+                            y_vals.append(float(means[i]) / theoretical_mi)
+                            y_errs.append(float(sigmas[i]) / np.abs(theoretical_mi))
+                            xmin.append(xlolims)
+                            xmax.append(xuplims)
+                        else:
+                            print(f"Warning: unable to extract N from file name {file}")
+            else:
+                # Convert the valid data into a numpy array
+                data_cleaned = np.array(valid_data).reshape(-1, 4)
 
+                # Separate the columns
+                first_column = data_cleaned[:, 0]
+                means = data_cleaned[:, 1]
+                sigmas = data_cleaned[:, 3]
 
-        # Sort data by x (N)
-        sorted_indices = np.argsort(x_vals)
-        x_vals = np.array(x_vals)[sorted_indices]
-        y_vals = np.array(y_vals)[sorted_indices]
-        y_errs = np.array(y_errs)[sorted_indices]
+                for i in range(len(first_column)):
+                    if int(first_column[i]) == k_bins_choice:
+                        match = re.search(r"size_(\d+)", file)
+                        if match:
+                            N = int(match.group(1))
+                            x_vals.append(1/N)
+                            y_vals.append(float(means[i]) / theoretical_mi)
+                            y_errs.append(float(sigmas[i]) / np.abs(theoretical_mi))
+                        else:
+                            print(f"Warning: unable to extract N from file name {file}")
 
-        # Assign color and plot
-        plt.errorbar(x_vals, y_vals, yerr=y_errs, fmt='.', linestyle='--', capsize=1, label=mi_estimate)
+        if "binning" in mi_estimate.lower():
+            # Sort data by x (N)
+            sorted_indices = np.argsort(x_vals)
+            x_vals = np.array(x_vals)[sorted_indices]
+            y_vals = np.array(y_vals)[sorted_indices]
+            y_errs = np.array(y_errs)[sorted_indices]
+            xmin = np.array(xmin)[sorted_indices]
+            xmax = np.array(xmax)[sorted_indices]
+
+            # Assign color and plot
+            plt.errorbar(x_vals, y_vals, yerr=y_errs, xlolims=xlolims, xuplims=xuplims, fmt='.', linestyle='--', capsize=1, label=mi_estimate)
+        else:
+            # Sort data by x (N)
+            sorted_indices = np.argsort(x_vals)
+            x_vals = np.array(x_vals)[sorted_indices]
+            y_vals = np.array(y_vals)[sorted_indices]
+            y_errs = np.array(y_errs)[sorted_indices]
+
+            # Assign color and plot
+            plt.errorbar(x_vals, y_vals, yerr=y_errs, fmt='.', linestyle='--', capsize=1, label=mi_estimate)
 
     # Format the title: Add the distribution name, the extracted parameter, and selected parameters
     formatted_distribution_name = distribution_name.replace('_', r'\_')
@@ -919,7 +1081,7 @@ def process_figure_21(files, distribution_name, mi_estimators, log_transformed):
         k_bins_choice = get_user_choice(k_bins_values, f"Choose the value of {param_type} to use for the plot (for {mi_estimate}):")
 
         # Prepare x, y values for the plot
-        x_vals, y_vals, y_err = [], [], []
+        x_vals, y_vals, y_err, xmin, xmax = [], [], [], [], []
 
         for param_value in sorted(filtered_files[idx].keys()):
             files_for_param_value = filtered_files[idx][param_value]
@@ -944,34 +1106,70 @@ def process_figure_21(files, distribution_name, mi_estimators, log_transformed):
                         # Convert the line into a float array (split by whitespace or tab)
                         row = np.fromstring(line, sep=' ')
 
-                        # Ensure the row has at least 4 columns (since you expect 4 values per row)
-                        if row.size >= 4:
-                            second_column_value = row[1]  # The second column (index 1)
+                        if "binning" in mi_estimate.lower():
+                            # Ensure the row has at least 7 columns (since you expect 7 values per row)
+                            if row.size >= 7:
+                                fifth_column_value = row[4]
 
-                            # Check if the second column is not infinity or NaN
-                            if not np.isinf(second_column_value) and not np.isnan(second_column_value):
-                                valid_data.append(row)  # Add the row to the list if it's valid
+                                # Check if it is not infinity or NaN
+                                if not np.isinf(fifth_column_value) and not np.isnan(fifth_column_value):
+                                    valid_data.append(row)  # Add the row to the list if it's valid
+                            else:
+                                print(f"Skipping line due to insufficient columns: {line}")
                         else:
-                            print(f"Skipping line due to insufficient columns: {line}")
+                            # Ensure the row has at least 4 columns (since you expect 4 values per row)
+                            if row.size >= 4:
+                                second_column_value = row[1]  # The second column (index 1)
 
-                # Convert the valid data into a numpy array
-                data_cleaned = np.array(valid_data).reshape(-1, 4)
+                                # Check if the second column is not infinity or NaN
+                                if not np.isinf(second_column_value) and not np.isnan(second_column_value):
+                                    valid_data.append(row)  # Add the row to the list if it's valid
+                            else:
+                                print(f"Skipping line due to insufficient columns: {line}")
 
-                # Separate the columns
-                first_column = data_cleaned[:, 0]
-                means = data_cleaned[:, 1]
-                sigmas = data_cleaned[:, 3]
+                if "binning" in mi_estimate.lower():
+                    # Convert the valid data into a numpy array
+                    data_cleaned = np.array(valid_data).reshape(-1, 7)
 
-                for i in range(len(first_column)):
-                    if int(first_column[i]) == k_bins_choice:
-                        # Compute the theoretical MI
-                        x_vals.append(param_value)  # Parameter value will be on the x-axis
-                        theoretical_mi = theoretical_mi_values.get(param_value, 1)
-                        y_vals.append(float(means[i]) / theoretical_mi)
-                        y_err.append(float(sigmas[i]) / np.abs(theoretical_mi))
+                    # Separate the columns
+                    first_column = data_cleaned[:, 0]
+                    means = data_cleaned[:, 4]
+                    sigmas = data_cleaned[:, 6]
+                    xlolims = data_cleaned[:, 1]
+                    xuplims = data_cleaned[:, 3]
 
-        # Plot the ratio I_est / I_theoretical for the current estimator with error bars
-        plt.errorbar(x_vals, y_vals, yerr=y_err, label=mi_estimate, marker='.', linestyle='--', alpha=0.7)
+                    for i in range(len(first_column)):
+                        if int(first_column[i]) == k_bins_choice:
+                                # Compute the theoretical MI
+                                x_vals.append(param_value)  # Parameter value will be on the x-axis
+                                theoretical_mi = theoretical_mi_values.get(param_value, 1)
+                                y_vals.append(float(means[i]) / theoretical_mi)
+                                y_err.append(float(sigmas[i]) / np.abs(theoretical_mi))
+                                xmin.append(xlolims)
+                                xmax.append(xuplims)
+                else:
+                    # Convert the valid data into a numpy array
+                    data_cleaned = np.array(valid_data).reshape(-1, 4)
+
+                    # Separate the columns
+                    first_column = data_cleaned[:, 0]
+                    means = data_cleaned[:, 1]
+                    sigmas = data_cleaned[:, 3]
+
+                    for i in range(len(first_column)):
+                        if int(first_column[i]) == k_bins_choice:
+                            # Compute the theoretical MI
+                            x_vals.append(param_value)  # Parameter value will be on the x-axis
+                            theoretical_mi = theoretical_mi_values.get(param_value, 1)
+                            y_vals.append(float(means[i]) / theoretical_mi)
+                            y_err.append(float(sigmas[i]) / np.abs(theoretical_mi))
+
+        if "binning" in mi_estimate.lower():
+            # Assign color and plot
+            plt.errorbar(x_vals, y_vals, yerr=y_err, xlolims=xlolims, xuplims=xuplims, fmt='.', linestyle='--', capsize=1, label=mi_estimate)
+        else:
+            # Assign color and plot
+            plt.errorbar(x_vals, y_vals, yerr=y_err, fmt='.', linestyle='--', capsize=1, label=mi_estimate)
 
     # Title formatting
     formatted_distribution_name = distribution_name.replace('_', r'\_')
