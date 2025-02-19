@@ -249,8 +249,8 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
                 means = data_cleaned[:, 4]
                 sigmas = data_cleaned[:, 6]
                 x_values = data_cleaned[:, 2]
-                xlolims = data_cleaned[:, 1]
-                xuplims = data_cleaned[:, 3]
+                xlolims = data_cleaned[:, 1].T
+                xuplims = data_cleaned[:, 3].T
             else:
                 # Convert the valid data into a numpy array
                 data_cleaned = np.array(valid_data).reshape(-1, 4)
@@ -276,6 +276,7 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
     # List to collect the legend labels
     legend_labels = []
 
+
     # Plot the data for each sorted N value
     for N in sorted_N_values:
         if "binning" in mi_estimate.lower():
@@ -283,12 +284,18 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
         else:
             x_vals, means, sigmas = data_dict[N]
 
-        # Points with error bars of the same color
-        plt.errorbar(x_vals, means, yerr=sigmas, xlolims=xlolims, xuplims=xuplims, linestyle='--', fmt='.', capsize=1, alpha=0.7, label=f'N={N}')
+    if "binning" in mi_estimate.lower():
+        x_err_left = x_vals - xlolims
+        x_err_right = xuplims - x_vals
+        x_errors = [x_err_left/N, x_err_right/N]
+        plt.errorbar(x_vals, means, yerr=sigmas, xerr=x_errors, linestyle='--', fmt='.', capsize=1, alpha=0.7, label=f'N={N}') 
+        legend_labels.append(f'N={N}')
+    else:
+        plt.errorbar(x_vals, means, yerr=sigmas, linestyle='--', fmt='.', capsize=1, alpha=0.7, label=f'N={N}')
         legend_labels.append(f'N={N}')
 
     # Customize the plot
-    plt.xscale('log')
+    #plt.xscale('log')
     plt.xlabel(r"num $_{\mathrm{bins}}$ /N" if mi_estimate == "mi_binning" else "k/N", fontsize=15)
 
     # Plot the theoretical line without including it in the legend
