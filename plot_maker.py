@@ -1090,7 +1090,7 @@ def process_figure_21(files, distribution_name, mi_estimators, log_transformed):
         k_bins_choice = get_user_choice(k_bins_values, f"Choose the value of {param_type} to use for the plot (for {mi_estimate}):")
 
         # Prepare x, y values for the plot
-        x_vals, y_vals, y_err, xmin, xmax = [], [], [], [], []
+        x_vals, y_vals, y_err = [], [], []
 
         for param_value in sorted(filtered_files[idx].keys()):
             files_for_param_value = filtered_files[idx][param_value]
@@ -1144,18 +1144,14 @@ def process_figure_21(files, distribution_name, mi_estimators, log_transformed):
                     first_column = data_cleaned[:, 0]
                     means = data_cleaned[:, 4]
                     sigmas = data_cleaned[:, 6]
-                    xlolims = data_cleaned[:, 1]
-                    xuplims = data_cleaned[:, 3]
 
                     for i in range(len(first_column)):
                         if int(first_column[i]) == k_bins_choice:
                                 # Compute the theoretical MI
-                                x_vals.append(param_value)  # Parameter value will be on the x-axis
+                                x_vals.append(float(param_value))  # Parameter value will be on the x-axis
                                 theoretical_mi = theoretical_mi_values.get(param_value, 1)
                                 y_vals.append(float(means[i]) / theoretical_mi)
                                 y_err.append(float(sigmas[i]) / np.abs(theoretical_mi))
-                                xmin.append(xlolims)
-                                xmax.append(xuplims)
                 else:
                     # Convert the valid data into a numpy array
                     data_cleaned = np.array(valid_data).reshape(-1, 4)
@@ -1168,14 +1164,20 @@ def process_figure_21(files, distribution_name, mi_estimators, log_transformed):
                     for i in range(len(first_column)):
                         if int(first_column[i]) == k_bins_choice:
                             # Compute the theoretical MI
-                            x_vals.append(param_value)  # Parameter value will be on the x-axis
+                            x_vals.append(float(param_value))  # Parameter value will be on the x-axis
                             theoretical_mi = theoretical_mi_values.get(param_value, 1)
                             y_vals.append(float(means[i]) / theoretical_mi)
                             y_err.append(float(sigmas[i]) / np.abs(theoretical_mi))
 
+        # Sort data by params
+        sorted_indices = np.argsort(x_vals)
+        x_vals = np.array(x_vals)[sorted_indices]
+        y_vals = np.array(y_vals)[sorted_indices]
+        y_err = np.array(y_err)[sorted_indices]
+
         if "binning" in mi_estimate.lower():
             # Assign color and plot
-            plt.errorbar(x_vals, y_vals, yerr=y_err, xlolims=xlolims, xuplims=xuplims, fmt='.', linestyle='--', capsize=1, label=mi_estimate)
+            plt.errorbar(x_vals, y_vals, yerr=y_err,fmt='.', linestyle='--', capsize=1, label=mi_estimate)
         else:
             # Assign color and plot
             plt.errorbar(x_vals, y_vals, yerr=y_err, fmt='.', linestyle='--', capsize=1, label=mi_estimate)
