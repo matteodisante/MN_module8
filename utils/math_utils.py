@@ -63,10 +63,18 @@ def circular_mi_theoretical(a, b, c):
     """
     def p_X(x):
         if abs(x) < a:
-            return (2 / (np.pi * (c - a) * (b - a))) * (
+ 
+            term1 = (2 / (np.pi * (c - a) * (b - a))) * (
                 np.sqrt(b**2 - x**2) - np.sqrt(a**2 - x**2) -
                 a * np.log((np.sqrt(b**2 - x**2) + b) / (np.sqrt(a**2 - x**2) + a))
             )
+            term2 = (2 / (np.pi * (c - a) * (c - b))) * (
+                np.sqrt(b**2 - x**2) - np.sqrt(c**2 - x**2) -
+                c * np.log((np.sqrt(b**2 - x**2) + b) / (np.sqrt(c**2 - x**2) + c))
+            )
+ 
+            return term1 + term2
+ 
         elif a <= abs(x) <= b:
             term1 = (2 / (np.pi * (c - a) * (b - a))) * (
             np.sqrt(b**2 - x**2) - a * np.log((np.sqrt(b**2 - x**2) + b) / abs(x))
@@ -76,11 +84,12 @@ def circular_mi_theoretical(a, b, c):
             )
             return term1 + term2
         elif b < abs(x) <= c:
-            return (1 / (np.pi * (c - a) * (c - b))) * (
+            return (2 / (np.pi * (c - a) * (c - b))) * (
                 c * np.log( (np.sqrt(c**2 - x**2) + c) / np.abs(x)) -
                 np.sqrt(c**2 - x**2))
         else:     
             return 0
+
 
 
     def marginal_entropy():
