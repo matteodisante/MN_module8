@@ -284,17 +284,17 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
         else:
             x_values, means, sigmas = data_dict[N]
 
-    if "binning" in mi_estimate.lower():
-        x_err_left = x_values - xlolims
-        print(x_err_left)
-        x_err_right = xuplims - x_values
-        print(x_err_right)
-        x_errors = [x_err_left/N, x_err_right/N]
-        plt.errorbar(x_values/N, means, yerr=sigmas, xerr=x_errors, linestyle='--', fmt='.', capsize=1, alpha=0.7, label=f'N={N}') 
-        legend_labels.append(f'N={N}')
-    else:
-        plt.errorbar(x_values/N, means, yerr=sigmas, linestyle='--', fmt='.', capsize=1, alpha=0.7, label=f'N={N}')
-        legend_labels.append(f'N={N}')
+        if "binning" in mi_estimate.lower():
+            x_err_left = x_values - xlolims
+            print(x_err_left)
+            x_err_right = xuplims - x_values
+            print(x_err_right)
+            x_errors = [x_err_left/N, x_err_right/N]
+            plt.errorbar(x_values/N, means, yerr=sigmas, xerr=x_errors, linestyle='--', fmt='.', capsize=1, alpha=0.7, label=f'N={N}') 
+            legend_labels.append(f'N={N}')
+        else:
+            plt.errorbar(x_values/N, means, yerr=sigmas, linestyle='--', fmt='.', capsize=1, alpha=0.7, label=f'N={N}')
+            legend_labels.append(f'N={N}')
 
     # Customize the plot
     #plt.xscale('log')
@@ -1188,7 +1188,7 @@ def process_figure_21(files, distribution_name, mi_estimators, log_transformed):
     title += f" (N={N_choice})"
     plt.title(title, fontsize=15)
     plt.xscale('log')
-    plt.xlabel(rf"${selected_param}$", fontsize=15)
+    plt.xlabel(f"${{{selected_param}}}$", fontsize=15)
     plt.ylabel(r"$\mathrm{I}_{\mathrm{est}} / \mathrm{I}_{\mathrm{theoretical}}$", fontsize=15)
     plt.legend(title="MI Estimators", fontsize=11, loc='best')
     plt.grid(True, linestyle='--', alpha=0.6)
