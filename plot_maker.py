@@ -178,7 +178,7 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
     """
     Generates the plot for Figure 4 (one file for each N).
     """
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(16, 9))
 
     # Dictionary to store the data for each N
     data_dict = {}
@@ -298,7 +298,7 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
 
     # Customize the plot
     plt.xscale('log')
-    plt.xlabel(r"num $_{\mathrm{bins}}$ /N" if mi_estimate == "mi_binning" else "k/N", fontsize=15)
+    plt.xlabel(r"num $_{\mathrm{bins}}$ /N" if mi_estimate == "mi_binning" else "k/N", fontsize=20)
 
     # Plot the theoretical line without including it in the legend
     plt.axhline(y=theoretical_mi, color='r', linestyle='-', linewidth=1, label='_nolegend_')
@@ -314,7 +314,7 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
     subscript = subscript_map.get(mi_estimate, "")
 
     # Set the label with the subscript not in italics
-    plt.ylabel(r"I$_{\mathrm{" + subscript + r"}}$", fontsize=15)
+    plt.ylabel(r"I$_{\mathrm{" + subscript + r"}}$", fontsize=20)
 
     # Format the title: Add the distribution name and the extracted parameter
     formatted_distribution_name = distribution_name.replace('_', r'\_')
@@ -329,7 +329,8 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
     plt.title(title, fontsize=15)
 
     # Add the legend and other plot elements
-    plt.legend(fontsize=11, loc='best')
+    plt.tick_params(axis='both', labelsize=14)
+    plt.legend(fontsize=13, loc='best')
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.tight_layout()
     plt.show()
