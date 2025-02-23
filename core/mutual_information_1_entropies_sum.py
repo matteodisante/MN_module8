@@ -25,8 +25,8 @@ def mutual_information_1_entropies_sum(dataset, k):
 	n_samples, n_variables = dataset.shape
 	
 	# Step 1: Given k find the distance from each point to its k-NN in the joint space
-	index_s_joint, distances_joint = find_k_nearest_neighbors(dataset, k)
-	epsilon_joint = 2 * distances_joint[:, k-1]  # 2*Distance in the joint space to the k-th nearest neighbor for each point
+	distances_joint = find_k_nearest_neighbors(dataset, k)
+	epsilon_joint = 2 * distances_joint  # 2*Distance in the joint space to the k-th nearest neighbor for each point
 	
 	epsilon_marginal_v = np.zeros(dataset.shape)
 	entropy_marginal_means = np.zeros(n_variables)
@@ -34,8 +34,8 @@ def mutual_information_1_entropies_sum(dataset, k):
 	for var_idx in range(n_variables):
 		# Extract the current variable as a 1D array
 		marginal_data = dataset[:, var_idx]
-		_, distances_marginal = find_k_nearest_neighbors(marginal_data.reshape(-1, 1), k)
-		epsilon_marginal_v[:, var_idx] = 2 * distances_marginal[:, k-1]
+		distances_marginal = find_k_nearest_neighbors(marginal_data.reshape(-1, 1), k)
+		epsilon_marginal_v[:, var_idx] = 2 * distances_marginal
 		entropy_marginal_means[var_idx] = np.mean(np.log(np.maximum(epsilon_marginal_v[:, var_idx], 1e-10)))
 		
 	mi = ( 

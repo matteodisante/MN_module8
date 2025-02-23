@@ -22,14 +22,14 @@ def find_k_nearest_neighbors(matrix, k):
 
         # Use sklearn's NearestNeighbors with the Chebyshev (max) metric
         nbrs = NearestNeighbors(n_neighbors=k+1, metric='chebyshev').fit(matrix)
-        distances, indices = nbrs.kneighbors(matrix)
+        distances = nbrs.kneighbors(matrix)[0]
 
         # Exclude self-neighbor and return
         logging.info(f"Found nearest neighbors for {matrix.shape[0]} samples.")
-        return indices[:, 1:], distances[:, 1:]  # Remove self-neighbor
+        return distances[:,k]  # Remove self-neighbor
     except Exception as e:
         logging.error(f"Error finding k-nearest neighbors with k={k}: {e}")
-        return None, None
+        return None
 
 
 
@@ -61,8 +61,7 @@ def compute_marginal_counts(matrix, epsilon):
         # nbrs.radius_neighbors doens't count the central point
         # nbrs.radius_neighbors actually counts the point on the edge but substracting 1e-12 to radius able us to ignore the counting of the border point
         for i in range(n_samples):
-            distances, _ = nbrs.radius_neighbors(matrix[i].reshape(1, -1), radius = (epsilon[i]/2 - 1e-12) ) 
-            marginal_counts[i] = len(distances[0]) 
+            marginal_counts[i] = len(nbrs.radius_neighbors(matrix[i].reshape(1, -1), radius = (epsilon[i]/2) - 1e-12)[0][0])  
 
         logging.info(f"Marginal counts computed for {n_samples} samples.")
         return marginal_counts

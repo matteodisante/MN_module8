@@ -292,17 +292,14 @@ def calculate_and_save_missing_values(dataset, output_file_path, missing_values,
     else:
         #Branch handling mi-1 and mi-sum cases
         mi_results = []
-        non_empty_bins_results = []
         logging.info(f"Calculating missing {key_label} values for {os.path.basename(output_file_path)}: {missing_values}")
         for value in missing_values:
             try:
-                mi, non_empty_cells = mi_function(dataset, value)
+                mi = mi_function(dataset, value)
                 mi_results.append(mi)
-                non_empty_bins_results.append(non_empty_cells)
             except Exception as e:
                 logging.error(f"Error calculating MI for {output_file_path}, {key_label}={value}: {str(e)}")
                 mi_results.append(None)
-                non_empty_bins_results.append(None)
         save_values_to_file(output_file_path, missing_values, mi_results, key_label, mi_label)
         logging.info(f"Results saved successfully to: {output_file_path}")
     

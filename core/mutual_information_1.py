@@ -27,15 +27,15 @@ def mutual_information_1(dataset, k, n_jobs = 2):
 	n_samples, n_variables = dataset.shape
 	
 	# Step 1: Find k-nearest neighbors in the joint space
-	index_s, distances = find_k_nearest_neighbors(dataset, k)
-	epsilon = 2 * distances[:, k-1]  # 2*Distance to the k-th nearest neighbor for each point
+	distances = find_k_nearest_neighbors(dataset, k)
+	epsilon = 2 * distances  # 2*Distance to the k-th nearest neighbor for each point
 
 	
 	# Step 2: Parallel computation of marginal counts
 	def compute_counts_for_variable(var_idx):
 		marginal_data = dataset[:, var_idx].reshape(-1, 1)
 		return np.maximum(0, compute_marginal_counts(marginal_data, epsilon))
-
+ 
 	results = Parallel(n_jobs=n_jobs)(delayed(compute_counts_for_variable)(var_idx) for var_idx in range(n_variables))
 	marginal_counts = np.array(results)
 
@@ -46,5 +46,7 @@ def mutual_information_1(dataset, k, n_jobs = 2):
 	+ (n_variables - 1) * digamma(n_samples)
 	- np.mean(np.sum(digamma(marginal_counts + 1), axis=0))
 	)
+	
+	print(mi)
 
 	return mi
