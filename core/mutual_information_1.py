@@ -46,7 +46,5 @@ def mutual_information_1(dataset, k, n_jobs = 2):
 	+ (n_variables - 1) * digamma(n_samples)
 	- np.mean(np.sum(digamma(marginal_counts + 1), axis=0))
 	)
-	
-	print(mi)
 
 	return mi
