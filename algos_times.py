@@ -89,7 +89,7 @@ if __name__ == "__main__":
     
     
     for i, size in enumerate(size_list):
-        dataset_path = next(details['file_path'] for details in files_path_detail if details['size'] == size)
+        dataset_path = next(details['file_path'] for details in files_path_detail if (details['size'] == size and details['file_index'] == "01"))
         print(dataset_path)
         dataset = np.loadtxt(dataset_path)
         dataset_len = dataset.shape[0]
@@ -112,39 +112,10 @@ if __name__ == "__main__":
                 mibinned_time_matrix[i,j], d_mibinned_time_matrix[i,j] = measure_execution_time(mutual_information_binning_adaptive, dataset, bins_value)
                 
         
-        output_files = ['mi1.txt', 'd_mi1.txt', 'misum.txt', 'd_misum.txt', 'mi_binned', 'd_mibinned']
+        output_files = ['mi1.txt', 'd_mi1.txt', 'misum.txt', 'd_misum.txt', 'mi_binned.txt', 'd_mibinned.txt']
         output_matrices = [mi1_time_matrix, d_mi1_time_matrix, misum_time_matrix, d_misum_time_matrix, mibinned_time_matrix, d_mibinned_time_matrix]
         
         for i, out_file in enumerate(output_files):
             np.savetxt(out_file, output_matrices[i])  
     
     
-          
-    
-#    
-#    dataset = np.loadtxt(file_path)
-#    n_samples = len(dataset)
-#
-#    
-#    results = []
-#    
-#    for k in k_list_default:
-#        if k >= n_samples:
-#            logging.warning(f"Skipping k={k} as it is greater than or equal to the number of samples ({n_samples})")
-#            continue
-#        mi_1_time, mi_1_uncertainty = measure_execution_time(mutual_information_1, dataset, k)
-#        mi_sum_time, mi_sum_uncertainty = measure_execution_time(mutual_information_1_entropies_sum, dataset, k)
-#        results.append(f"k={k}, Mutual Information 1: {mi_1_time:.5f} ± {mi_1_uncertainty:.5f} sec")
-#        results.append(f"k={k}, Mutual Information 1 (Entropies Sum): {mi_sum_time:.5f} ± {mi_sum_uncertainty:.5f} sec")
-#    
-#    for bins_asked_per_axis in bins_asked_per_axis_default:
-#        mi_binned_time, mi_binned_uncertainty = measure_execution_time(mutual_information_binning_adaptive, dataset, bins_asked_per_axis)
-#        results.append(f"bins={bins_asked_per_axis}, Mutual Information (Binning Adaptive): {mi_binned_time:.5f} ± {mi_binned_uncertainty:.5f} sec")
-#    
-#    output_file = "execution_times.txt"
-#    with open(output_file, "w") as f:
-#        for line in results:
-#            f.write(line + "\n")
-#            logging.debug(line + "\n")
-#    
-#    logging.info(f"Execution times saved in {output_file}")
