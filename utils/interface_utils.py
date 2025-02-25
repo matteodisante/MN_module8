@@ -1,5 +1,6 @@
 import os
 import logging
+import inspect
 import datetime
 
 def navigate_directories(start_path=".", multi_select=False, file_extension=".bin"):
@@ -136,7 +137,8 @@ def setup_logger():
     os.makedirs(log_dir, exist_ok=True)  # Ensure logging directory exists
 
     # Nome file log dinamico basato sullo script attuale
-    script_name = os.path.basename(__file__).replace(".py", "")
+    main_script = inspect.stack()[-1].filename
+    script_name = os.path.splitext(os.path.basename(main_script))[0]
     log_filename = f"{script_name}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
     log_path = os.path.join(log_dir, log_filename)
 
@@ -145,7 +147,6 @@ def setup_logger():
         format="%(asctime)s - %(levelname)s - %(message)s",
         handlers=[
             logging.FileHandler(log_path),  # Scrive su file
-            logging.StreamHandler()  # Stampa in console
         ]
     )
     logging.info("Logging started. File: %s", log_path)
