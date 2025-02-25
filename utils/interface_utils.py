@@ -61,7 +61,7 @@ def navigate_directories(start_path=".", multi_select=False, file_extension=".bi
                         selected_paths.extend([os.path.join(root, f) for f in files_in_dir if f.endswith(file_extension)])
                 elif os.path.isfile(item_path) and item_path.endswith(file_extension):
                     selected_paths.append(item_path)
-            print(f"[INFO] Selected all items: {selected_paths}")
+            #print(f"[INFO] Selected all items: {selected_paths}")
             break
         elif user_input.startswith("D") and user_input[1:].isdigit():
             # Handle directory selection
