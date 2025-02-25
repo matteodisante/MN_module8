@@ -65,54 +65,7 @@ def process_file(file_path, k, mi_estimate):
 
 
 
-def extract_file_details(file_path):
-    """
-    Extracts distribution name, size, parameters, and file index from a given file path.
-    """
-    try:
-        logging.info(f"Extracting details from file path: {file_path}")
 
-        base_name = os.path.basename(file_path)
-        dir_name = os.path.dirname(file_path)
-
-        # Extract file index from the file name
-        file_index = base_name.split('.')[0]
-
-        # Check if the directory path includes "size_*" and other relevant parts
-        dir_parts = dir_name.split(os.sep)
-
-        # Initialize variables as None
-        size = None
-        params = None
-        distribution_name = None
-
-        # Check if the path includes size-related or parameter-related information
-        for i, part in enumerate(dir_parts):
-            if part.startswith("size_"):
-                size = part.split('_')[1]
-                if i > 0:
-                    params = dir_parts[i-1]
-                if i > 1:
-                    distribution_name = dir_parts[i-2]
-
-        # If no relevant directories, default to None for all parameters
-        if size is None and len(dir_parts) >= 2:
-            distribution_name = dir_parts[-2]
-
-        # Only include keys if they are found
-        details = {
-            "distribution_name": distribution_name,
-            "size": size,
-            "params": params,
-            "file_index": file_index
-        }
-
-        logging.info(f"Extracted details: {details}")
-        return details
-
-    except Exception as e:
-        logging.error(f"Error extracting details from file path {file_path}: {e}")
-        return None
 
 
 
