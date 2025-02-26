@@ -1,4 +1,5 @@
 import os
+import sys
 import logging
 import inspect
 import datetime
@@ -131,7 +132,7 @@ def parse_k_values(k_input):
 
 
 # Logging setup function
-def setup_logger():
+def setup_logger(stdout_printing = False):
     """Set up the logging configuration and create a log file dynamically."""
     log_dir = "logging"
     os.makedirs(log_dir, exist_ok=True)  # Ensure logging directory exists
@@ -142,11 +143,13 @@ def setup_logger():
     log_filename = f"{script_name}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
     log_path = os.path.join(log_dir, log_filename)
 
+    handlers = [logging.FileHandler(log_path)]
+    if stdout_printing:
+        handlers.append(logging.StreamHandler(stream=sys.stdout))
+
     logging.basicConfig(
         level=logging.DEBUG,  # DEBUG mostra tutti i messaggi
         format="%(asctime)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.FileHandler(log_path),  # Scrive su file
-        ]
+        handlers=handlers
     )
     logging.info("Logging started. File: %s", log_path)
