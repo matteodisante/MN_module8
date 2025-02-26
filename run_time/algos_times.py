@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import numpy as np
+import pandas as pd
 import logging
 from scipy.special import digamma
 
@@ -64,32 +65,33 @@ if __name__ == "__main__":
         sys.exit(0)
     
     files_path_detail = []
-    all_sizes = []
     
     for single_path in files_path:
         details = extract_file_details(single_path)
+        details["size"] = int(details["size"]) 
         files_path_detail.append(details)
-        all_sizes.append(details["size"])
-    
+        
+
+    all_sizes_int = sorted({ d["size"] for d in files_path_detail })
     dist_name = files_path_detail[0]["distribution_name"]
     params = files_path_detail[0]["params"]
     file_index = files_path_detail[0]["file_index"]
-    
-    size_list = list(set(all_sizes)) 
+     
+     
     k_list = [1, 5, 25, 100, 500, 2500, 5000]
     bins_list = [2, 4, 8, 16, 32, 64, 128, 256] 
     
     # Creazione delle matrici per i tempi di esecuzione e le relative incertezze (delta)
-    mi1_time_matrix       = np.zeros((len(size_list), len(k_list)))
-    d_mi1_time_matrix     = np.zeros((len(size_list), len(k_list)))
-    misum_time_matrix     = np.zeros((len(size_list), len(k_list)))
-    d_misum_time_matrix   = np.zeros((len(size_list), len(k_list)))
-    mibinned_time_matrix  = np.zeros((len(size_list), len(bins_list)))
-    d_mibinned_time_matrix= np.zeros((len(size_list), len(bins_list)))
+    mi1_time_matrix       = np.zeros((len(all_sizes_int), len(k_list)))
+    d_mi1_time_matrix     = np.zeros((len(all_sizes_int), len(k_list)))
+    misum_time_matrix     = np.zeros((len(all_sizes_int), len(k_list)))
+    d_misum_time_matrix   = np.zeros((len(all_sizes_int), len(k_list)))
+    mibinned_time_matrix  = np.zeros((len(all_sizes_int), len(bins_list)))
+    d_mibinned_time_matrix= np.zeros((len(all_sizes_int), len(bins_list)))
     
     
-    for i, size in enumerate(size_list):
-        dataset_path = next(details['file_path'] for details in files_path_detail if (details['size'] == size and details['file_index'] == "01"))
+    for i, size in enumerate(all_sizes_int):
+        dataset_path = next(d['file_path'] for d in files_path_detail if d['size'] == size and d['file_index'] == "01")
         print(dataset_path)
         dataset = np.loadtxt(dataset_path)
         dataset_len = dataset.shape[0]
@@ -99,23 +101,45 @@ if __name__ == "__main__":
             if k_value < dataset_len:
                 mi1_time_matrix[i,j], d_mi1_time_matrix[i,j] = measure_execution_time(mutual_information_1, dataset, k_value)
             else:
-                 mi1_time_matrix[i,j], d_mi1_time_matrix[i,j] = None, None
+                 mi1_time_matrix[i,j], d_mi1_time_matrix[i,j] = np.nan, np.nan
            
-            for j, k_value in enumerate(k_list):
-                if k_value < dataset_len:
-                    misum_time_matrix[i,j], d_misum_time_matrix[i,j] = measure_execution_time(mutual_information_1_entropies_sum, dataset, k_value)
-                else:
-                    mi1_time_matrix[i,j], d_mi1_time_matrix[i,j] = None, None
+        for j, k_value in enumerate(k_list):
+            if k_value < dataset_len:
+                misum_time_matrix[i,j], d_misum_time_matrix[i,j] = measure_execution_time(mutual_information_1_entropies_sum, dataset, k_value)
+            else:
+                misum_time_matrix[i,j], d_misum_time_matrix[i,j] = np.nan, np.nan
                     
                 
-            for j, bins_value in enumerate(bins_list):
-                mibinned_time_matrix[i,j], d_mibinned_time_matrix[i,j] = measure_execution_time(mutual_information_binning_adaptive, dataset, bins_value)
+        for j, bins_value in enumerate(bins_list):
+            mibinned_time_matrix[i,j], d_mibinned_time_matrix[i,j] = measure_execution_time(mutual_information_binning_adaptive, dataset, bins_value)
                 
         
-        output_files = ['mi1.txt', 'd_mi1.txt', 'misum.txt', 'd_misum.txt', 'mi_binned.txt', 'd_mibinned.txt']
-        output_matrices = [mi1_time_matrix, d_mi1_time_matrix, misum_time_matrix, d_misum_time_matrix, mibinned_time_matrix, d_mibinned_time_matrix]
+   
+        # Crea la cartella di output seguendo la struttura: computation_times/<dist_name>/<params>/
+        output_folder = os.path.join("computation_times", dist_name, params)
+        os.makedirs(output_folder, exist_ok=True)
         
-        for i, out_file in enumerate(output_files):
-            np.savetxt(out_file, output_matrices[i])  
+        # Creazione dei DataFrame e salvataggio in file nella cartella di output
+        df_mi1_time = pd.DataFrame(mi1_time_matrix, index=all_sizes_int, columns=k_list)
+        df_mi1_time.to_csv(os.path.join(output_folder, "mi1.txt"), sep="\t")
+        
+        df_d_mi1_time = pd.DataFrame(d_mi1_time_matrix, index=all_sizes_int, columns=k_list)
+        df_d_mi1_time.to_csv(os.path.join(output_folder, "d_mi1.txt"), sep="\t")
+        
+        df_misum_time = pd.DataFrame(misum_time_matrix, index=all_sizes_int, columns=k_list)
+        df_misum_time.to_csv(os.path.join(output_folder, "misum.txt"), sep="\t")
+        
+        df_d_misum_time = pd.DataFrame(d_misum_time_matrix, index=all_sizes_int, columns=k_list)
+        df_d_misum_time.to_csv(os.path.join(output_folder, "d_misum.txt"), sep="\t")
+        
+        df_mibinned_time = pd.DataFrame(mibinned_time_matrix, index=all_sizes_int, columns=bins_list)
+        df_mibinned_time.to_csv(os.path.join(output_folder, "mi_binned.txt"), sep="\t")
+        
+        df_d_mibinned_time = pd.DataFrame(d_mibinned_time_matrix, index=all_sizes_int, columns=bins_list)
+        df_d_mibinned_time.to_csv(os.path.join(output_folder, "d_mibinned.txt"), sep="\t")
     
+    logging.info("Computation times saved in folder: " + output_folder)
+        
+        
+
     
