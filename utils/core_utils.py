@@ -52,35 +52,6 @@ def kth_nearest_distance_1d(data: np.ndarray, k: int) -> np.ndarray:
 
 
 
-
-#def find_k_nearest_neighbors(matrix, k):
-#    """
-#    Finds the k-nearest neighbors for each point in a dataset based on the max metric.
-#
-#    Parameters:
-#        matrix (2D array-like): Input data where each row is a point and each column is a coordinate.
-#        k (int): Number of nearest neighbors to find for each point.
-#
-#    Returns:
-#        indices (2D array): Indices of the k-nearest neighbors for each point.
-#        distances (2D array): Distances to the k-nearest neighbors for each point.
-#    """
-#    try:
-#        logger.info(f"Finding {k} nearest neighbors using Chebyshev metric.")
-#
-#        # Use sklearn's NearestNeighbors with the Chebyshev (max) metric
-#        nbrs = NearestNeighbors(n_neighbors=k+1, metric='chebyshev', algorithm='kd_tree').fit(matrix)
-#        distances = nbrs.kneighbors(matrix)[0]
-#
-#        # Exclude self-neighbor and return
-#        logger.info(f"Found nearest neighbors for {matrix.shape[0]} samples.")
-#        return distances[:,k]  # Remove self-neighbor
-#    except Exception as e:
-#        logger.error(f"Error finding k-nearest neighbors with k={k}: {e}")
-#        return None
-
-
-
 def find_k_nearest_neighbors(matrix, k, workers=3):
     """
     Finds the k-th nearest neighbor for each point in a dataset using the Chebyshev (max) metric,
@@ -96,17 +67,14 @@ def find_k_nearest_neighbors(matrix, k, workers=3):
         np.ndarray: 1D array containing the distance to the k-th nearest neighbor for each point.
     """
     try:
-        logger.info(f"Finding {k} nearest neighbors using Chebyshev distance (p=np.inf) with cKDTree.")
         # Costruisce l'albero KD per i dati
         tree = cKDTree(matrix)
         # p=np.inf indica la distanza Chebyshev
         # workers consente la parallelizzazione (disponibile da SciPy 1.9.0 in poi)
         distances, indices = tree.query(matrix, k=k+1, p=np.inf, workers=workers)
-        logger.info(f"Found nearest neighbors for {matrix.shape[0]} samples.")
         # Restituisce la distanza del k-esimo vicino (escludendo il self-neighbor)
         return distances[:, k]
     except Exception as e:
-        logger.error(f"Error finding k-nearest neighbors with k={k}: {e}")
         return None
 
 
