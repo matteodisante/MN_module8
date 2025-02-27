@@ -6,11 +6,11 @@ import pandas as pd
 import logging
 from scipy.special import digamma
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), './utils/')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../utils/')))
 from interface_utils import navigate_directories, setup_logger
 from io_utils import extract_file_details
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), './core/')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../core/')))
 from mutual_information_1 import mutual_information_1
 from mutual_information_1_entropies_sum import mutual_information_1_entropies_sum
 from mutual_information_binning import mutual_information_binning_adaptive 
@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     
     logging.info("Select the file to analyze")
-    files_path = navigate_directories(start_path="data/synthetic_data/", multi_select=True, file_extension=".txt")
+    files_path = navigate_directories(start_path="../data/synthetic_data/", multi_select=True, file_extension=".txt")
     if not files_path:
         logging.warning("No file selected. Exiting.")
         sys.exit(0)
