@@ -5,7 +5,7 @@ from scipy.special import digamma
 
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../utils')))
-from utils.core_utils import find_k_nearest_neighbors
+from core_utils import find_k_nearest_neighbors
 
 
 

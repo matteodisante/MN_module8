@@ -3,7 +3,6 @@ import logging
 logger = logging.getLogger(__name__)
 from sklearn.neighbors import NearestNeighbors
 
-from utils.decorators import time_it
 
 
 def find_k_nearest_neighbors(matrix, k):
@@ -19,14 +18,12 @@ def find_k_nearest_neighbors(matrix, k):
         distances (2D array): Distances to the k-nearest neighbors for each point.
     """
     try:
-        logger.info(f"Finding {k} nearest neighbors using Chebyshev metric.")
 
         # Use sklearn's NearestNeighbors with the Chebyshev (max) metric
         nbrs = NearestNeighbors(n_neighbors=k+1, metric='chebyshev').fit(matrix)
         distances = nbrs.kneighbors(matrix)[0]
 
         # Exclude self-neighbor and return
-        logger.info(f"Found nearest neighbors for {matrix.shape[0]} samples.")
         return distances[:,k]  # Remove self-neighbor
     except Exception as e:
         logger.error(f"Error finding k-nearest neighbors with k={k}: {e}")
@@ -64,7 +61,6 @@ def compute_marginal_counts(matrix, epsilon):
         for i in range(n_samples):
             marginal_counts[i] = len(nbrs.radius_neighbors(matrix[i].reshape(1, -1), radius = (epsilon[i]/2) - 1e-12)[0][0])  
 
-        logger.info(f"Marginal counts computed for {n_samples} samples.")
         return marginal_counts
     except Exception as e:
         logger.error(f"Error computing marginal counts: {e}")
