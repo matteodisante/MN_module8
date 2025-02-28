@@ -173,6 +173,7 @@ def hist_2labels(n, h, data1, data2, label1, label2, directory_path):
     file_name = f'{label1}_{label2}.pdf'
     file_path = os.path.join(directory_path, file_name)
     plt.savefig(file_path)
+    plt.close()
 
 def hist_3labels(n, h, data1, data2, data3, label1, label2, label3, directory_path):
     fontsize = 12
@@ -196,6 +197,7 @@ def hist_3labels(n, h, data1, data2, data3, label1, label2, label3, directory_pa
     file_name = f'{label1}_{label2}_{label3}.pdf'
     file_path = os.path.join(directory_path, file_name)
     plt.savefig(file_path)
+    plt.close()
 
 def same_mouse_diff_phase(n, h, data):
     file_path = f'data/real_data/plots/n_{n}/h_{h}/mi1/ks_results.txt'
@@ -374,6 +376,7 @@ def plot_heatmap(matrix, labels, n, h):
 
     ax.set_title(f"n_{n}/h_{h}/mi1 Median Absolute Differences")
     plt.savefig(f'data/real_data/plots/n_{n}/h_{h}/mi1/heatmap.pdf')
+    plt.close()
 
 if __name__ == "__main__":
     print("Welcome!\nThis is a script to generate plots for real data processed with mi1 algorithm.")
