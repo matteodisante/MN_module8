@@ -125,10 +125,10 @@ def main():
     # Test 3: Array casuale di 20 elementi
     print("Test 3: Array casuale (20 elementi)")
     np.random.seed(42)
-    data3 = np.random.rand(20) * 100
+    data3 = np.random.rand(100000) * 100
     print(f"Test 3: Array casuale (20 elementi) ORDINATO {np.sort(data3)}")
     print("Input:", data3)
-    for k in [1, 5]:
+    for k in [1000]:
         try:
             result = kth_nearest_distance_1d(data3, k)
             print(f"Con k = {k}, kth nearest distances: {result}")
