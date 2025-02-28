@@ -159,3 +159,25 @@ def transform_to_bilog_scale(file_path):
             transformed_rows.append(" ".join(transformed_values))
     
     return transformed_rows
+    
+    
+def bivariate_normal_mi_theoretical(r):
+    """
+    Calculate the exact mutual information for the bivariate normal distribution.
+    
+    :param u: Correlation as a parameter of the bivariate normal pdf (r > 0).
+    :return: Mutual information (I_exact).
+    """
+    if r < -1 or r>1:
+        raise ValueError("The correlation r must be between -1 and 1.")
+    mi_exact = -0.5*np.log(1-r**2)
+    return mi_exact
+
+
+
+
+
+
+
+
+
