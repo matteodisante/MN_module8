@@ -1,5 +1,5 @@
 import os
-os.environ['OMP_NUM_THREADS'] = '2'
+#os.environ['OMP_NUM_THREADS'] = '2'
 import argparse
 import numpy as np
 import pandas as pd
@@ -7,9 +7,9 @@ import logging
 import time
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'core/')))
-from core.mutual_information_1 import mutual_information_1
+from mutual_information_1 import mutual_information_1
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'utils/')))
-from utils.interface_utils import setup_logger
+from interface_utils import setup_logger
 
 
 def ensure_directory_exists(directory_path):
@@ -20,9 +20,9 @@ def ensure_directory_exists(directory_path):
     """
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
-        logging.info(f"\nDirectory created: {directory_path}")
+        logging.info(f"\n Directory created: {directory_path}")
     else:
-        logging.info(f"\nDirectory {directory_path} already existed. You might have overwritten the data!")
+        logging.info(f"\n Directory {directory_path} already existed. You might have overwritten the data!")
 
 
 def import_raw_data(directory_path):
@@ -64,56 +64,6 @@ def import_raw_data(directory_path):
     return data_dict_A, data_dict_C
 
 
-
-#def get_valid_integer(prompt, default_value, min_value=None):
-#    """Helper function to validate integer input with a default value."""
-#    while True:
-#        user_input = input(f"{prompt} (default {default_value}): ").strip()
-#        if not user_input:
-#            return default_value
-#        try:
-#            value = int(user_input)
-#            if min_value is not None and value < min_value:
-#                print(f"Value must be at least {min_value}. Try again.")
-#                continue
-#            return value
-#        except ValueError:
-#            print("Invalid input. Please enter a valid integer.")
-
-
-
-#def get_user_parameters():
-#    """
-#    Prompt the user to input parameters for the process with input validation.
-#
-#    Returns:
-#        tuple: (n, h) with valid integer values.
-#    """
-#    # Default values
-#    default_n = 5000
-#
-#    # Prompt for 'n' with validation
-#    n = get_valid_integer("Enter the value for 'n'", default_n, min_value=1)
-#
-#    # Prompt for 'h' with options and validation
-#    while True:
-#        print("\nChoose the overlap type for 'h':")
-#        print("1 - Half overlapping")
-#        print("2 - No overlaps")
-#        h_choice = input("Enter your choice (1 or 2, default 1): ").strip()
-#        if not h_choice:
-#            h = n // 2
-#            break
-#        elif h_choice == "1":
-#            h = n // 2
-#            break
-#        elif h_choice == "2":
-#            h = n
-#            break
-#        else:
-#            print("Invalid choice. Please enter 1 or 2.")
-#
-#    return n, h
 
 def real_data_processing(data_dict, name_dict, n, h, k_list):
     for name in data_dict.keys():
@@ -184,19 +134,9 @@ if __name__ == "__main__":
     n = args.n
     h = n if args.overlap == 'no_overlapping' else n // 2
     logging.info(f"\nParameters: n={n}, h={h}")
-    
-    
-#    while True:
-        
+
         
     real_data_processing(raw_data['A'], 'A', n, h, k_list)
     real_data_processing(raw_data['C'], 'C', n, h, k_list)
 
 
-#        # Ask if the user wants to process more data or exit
-#        continue_choice = None
-#        while continue_choice not in ['y', 'n']:
-#            continue_choice = input("\nDo you want to process more data? (y/n): ").strip().lower()
-#        if continue_choice == 'n':
-#            print("Exiting program. Goodbye!")
-#            break
