@@ -97,7 +97,7 @@ def real_data_processing(data_dict, name_dict, n, h, k_list):
                 mi_array[j] = 0
 
         # save reuslts
-        directory_path = f'data/real_data/n_{n}/h_{h}/{name_dict}'
+        directory_path = f'data/real_data/n_{n}/h_{h}/mi1/{name_dict}'
         ensure_directory_exists(directory_path)
         file_name = f"mi_{name}.txt"
         file_path = os.path.join(directory_path, file_name)
@@ -128,11 +128,11 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description="Process real data with given parameters.")
     parser.add_argument("--n", type=int, default=5000, help="Value for parameter n (default: 5000)")
-    parser.add_argument("--overlap", choices=['no_overlapping', 'half_overlapping'], required=True, help="Specify overlapping mode: 'no_overlapping' or 'half_overlapping'")
+    parser.add_argument("--overlap", choices=['no', 'half'], required=True, help="Specify overlapping mode: 'no' or 'half'")
     
     args = parser.parse_args()
     n = args.n
-    h = n if args.overlap == 'no_overlapping' else n // 2
+    h = n if args.overlap == 'no' else n // 2
     logging.info(f"\nParameters: n={n}, h={h}")
 
         
