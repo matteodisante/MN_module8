@@ -16,14 +16,14 @@ if __name__ == '__main__':
     
     logging.info("Select file containing central values of computation times for a given mi estimate")
     central_value_file_path = navigate_directories(
-        start_path="../computation_times/",
+        start_path="computation_times/",
         multi_select=False,
         file_extension=".txt"
     )[0]
     
     logging.info("Select file containing uncertainties for the same mi estimate")
     error_value_file_path = navigate_directories(
-        start_path="../computation_times/",
+        start_path="computation_times/",
         multi_select=False,
         file_extension=".txt"
     )[0]
