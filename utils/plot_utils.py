@@ -4,8 +4,15 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import seaborn as sns
 import scipy.stats as stats
+import re
+import inspect
 
-from io_utils import ensure_directory_and_handle_file_conflicts, load_data_csv
+from utils.io_utils import ensure_directory_and_handle_file_conflicts, load_data_csv
+from utils.config_utils import load_config
+from utils.math_utils import circular_mi_theoretical, gamma_exponential_mi_theoretical, \
+    correlated_gaussian_rv_mi_theoretical, independent_exponential_rv_mi_theoretical, \
+        independent_gaussian_rv_mi_theoretical, independent_uniform_rv_mi_theoretical, \
+            ordered_wienman_exponential_mi_theoretical
 
 
 def plot_histograms(series1, series2, bins):
@@ -164,5 +171,309 @@ def generate_plot(
         plt.close()
     
 
+
+
+def load_config_distributions():
+    """Loads the config.json file from the same directory as the script and returns the available distributions."""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(os.path.dirname(script_dir), "config.json")
     
+    if not os.path.exists(config_path):
+        print(f"Error: The config.json file was not found in {script_dir}.")
+        exit(1)
+
+    config = load_config(config_path)
+    return [dist["name"] for dist in config["distributions"]]
+
+def get_user_choice(options, prompt):
+    """Asks the user to choose a valid option."""
+    while True:
+        print(prompt)
+        for idx, option in enumerate(options, 1):
+            print(f"{idx}. {option}")
+        choice = input("Enter the corresponding number: ")
+        
+        if choice.isdigit():
+            choice = int(choice)
+            if 1 <= choice <= len(options):
+                return options[choice - 1]
+        print("Invalid choice. Please try again.")
+
+def get_user_choices(options, prompt, multiple=False):
+    """Asks the user to choose one or more valid options."""
+    while True:
+        print(prompt)
+        for idx, option in enumerate(options, 1):
+            print(f"{idx}. {option}")
+        
+        if multiple:
+            choice_input = input("Enter the corresponding numbers separated by commas (e.g., 1, 3): ")
+            # Parse the input into a list of integers
+            try:
+                choices = [int(x.strip()) for x in choice_input.split(',')]
+                if all(1 <= choice <= len(options) for choice in choices):
+                    return [options[choice - 1] for choice in choices]
+                else:
+                    print("Some choices are out of range. Please try again.")
+            except ValueError:
+                print("Invalid input. Please enter numbers separated by commas.")
+        else:
+            choice = input("Enter the corresponding number: ")
+            if choice.isdigit():
+                choice = int(choice)
+                if 1 <= choice <= len(options):
+                    return options[choice - 1]
+            print("Invalid choice. Please try again.")
+
+
+def select_files_by_extension(start_path=".", file_extension=".txt"):
+    """Selects all files with a specified extension from the given directory and its subdirectories."""
+    selected_paths = []
+
+    # Walk through all directories and files starting from start_path
+    for root, _, files in os.walk(start_path):
+        for file in files:
+            if file.endswith(file_extension):
+                selected_paths.append(os.path.join(root, file))
+    return selected_paths
+
+def find_matching_files(directory, distribution_name, mi_estimate, log_transformed=False):
+    """Searches for .txt files in the specified folder and selects those matching the 
+    distribution and estimate provided."""
+    all_files = select_files_by_extension(directory, file_extension=".txt")
+    pattern = re.compile(rf"summary_{distribution_name}_(.*?)_size_\d+_{mi_estimate}.txt")
+    if log_transformed:
+        pattern = re.compile(rf"summary_{distribution_name}_(.*?)_size_\d+_log_transformed_{mi_estimate}.txt")
+    matching_files = [file for file in all_files if pattern.match(os.path.basename(file))]
+    return matching_files
+
+
+# Extracts the {params_values} string from the filename
+def extract_parameters_from_filename(filename, distribution_name, mi_estimate, log_transformed=False):
+    """
+    Extracts the parameter string from the filename, given the format:
+    'summary_{distribution_name}_{params_values}_size_{value_size}_{mi_estimate}.txt'
+    """
+    pattern = rf"summary_{distribution_name}_(.*?)_size_\d+_{mi_estimate}.txt"
+    if log_transformed:
+        pattern = rf"summary_{distribution_name}_(.*?)_size_\d+_log_transformed_{mi_estimate}.txt"
+    match = re.match(pattern, filename)
+    return match.group(1) if match else None
+
+
+def extract_parameters_from_paths(paths, distribution_name, mi_estimate, log_transformed=False):
+    """
+    Extracts parameters and their values from all the files in the paths list and
+    creates a dictionary associating each file with its extracted parameters.
+    """
+    # Two dictionaries, one for parameter-value, one for file-(parameter-value)
+    all_parameters = {}
+    extracted_params_per_file = {}
+
+    for path in paths:
+        param_string = extract_parameters_from_filename(os.path.basename(path), distribution_name, mi_estimate, log_transformed)
+        if param_string:
+            param_pairs = param_string.split('_')
+
+            if len(param_pairs) % 2 != 0:
+                print(f"Error in file: {path}. The number of parameter-value pairs is odd.")
+                continue
+
+            file_params = {param_pairs[i]: param_pairs[i + 1] for i in range(0, len(param_pairs), 2)}
+            extracted_params_per_file[path] = file_params  # Saves the file's parameters
+
+            for param_name, param_value in file_params.items():
+                if param_name not in all_parameters:
+                    all_parameters[param_name] = set()
+                all_parameters[param_name].add(param_value)
+
+    return all_parameters, extracted_params_per_file
+
+
+def filter_files_by_parameters(extracted_params_per_file, selected_params):
+    """
+    Filters files based on the parameters selected by the user.
+
+    :param extracted_params_per_file: Dictionary {file_path: {param_name: param_value}}.
+    :param selected_params: Dictionary {param_name: param_value} selected by the user.
+    :return: List of filtered files.
+    """
+    return [
+        path for path, file_params in extracted_params_per_file.items()
+        if all(file_params.get(param) == value for param, value in selected_params.items())
+    ]
+
+
+# Extracts the possible k values or bins from the files
+def extract_k_or_bins_values_from_files(files):
+    """Extracts k values or the number of bins from the first column of the files. The first row contains the header, 
+    and the k values or the number of bins are in the first column starting from the second row."""
+    x_values = set()
     
+    for file in files:
+        with open(file, 'r') as f:
+            # Skip the first row (header)
+            next(f)
+            for line in f:
+                # Split the line to separate the columns
+                columns = line.strip().split()
+                if columns:  # Check that the line is not empty
+                    try:
+                        x_value = int(columns[0])  # The first column contains the k value
+                        x_values.add(x_value)
+                    except ValueError:
+                        # If the value in the first column is not an integer, ignore that line
+                        continue
+    
+    # Return the sorted k values
+    return sorted(x_values)
+
+
+
+
+def format_plot(mi_estimate="", figure_choice="4", is_independent=False, N_value=1, distribution_name='gaussian', param_name_mapping = {} ,distribution_choices=['gauss','exp'], selected_params={}):
+    """Imposta le etichette e lo stile del plot."""
+    # Map to transform mi_estimate to the subscript format
+    subscript_map = {
+        "mi_1": "1",
+        "mi_sum": "sum",
+        "mi_binning": "binning"
+    }
+
+    # Get the correct subscript
+    subscript = subscript_map.get(mi_estimate, "")
+
+    if figure_choice in ["4b"]:
+        ylabel = (r"I$_{\mathrm{" + subscript + r"}}$" if is_independent else
+                r"I$_{\mathrm{" + subscript + r"}}$/I$_{\mathrm{theoretical}}$")
+    elif figure_choice=="4":
+        ylabel = (r"I$_{\mathrm{" + subscript + r"}}$")
+    elif figure_choice in ["20", "21"]:
+        ylabel = (r"I$_{\mathrm{estimate}}$" if is_independent else
+                r"I$_{\mathrm{estimate}}$/I$_{\mathrm{theoretical}}$")
+    plt.ylabel(ylabel, fontsize=14)
+
+    plt.axhline(y=(0.0 if is_independent else 1.0), color='r', linestyle='--', linewidth=0.5, label='_nolegend_')
+
+    plt.xscale('log')
+    if figure_choice=="4b":
+        plt.xlabel(r"Number of non-zero cells" if mi_estimate == "mi_binning" else "k", fontsize=14)
+    elif figure_choice=="4": 
+        plt.xlabel(r"Number of non-zero cells/N" if mi_estimate == "mi_binning" else "k/N", fontsize=14)
+    elif figure_choice in ["20", "7", "9"]:
+        plt.xlabel(r"1/N", fontsize=14)
+    elif figure_choice in ["8"]:
+        plt.xlabel(r"N", fontsize=14)
+    else:
+        plt.xlabel(param_name_mapping, fontsize=14)
+
+    plt.grid(True, linestyle='--', alpha=0.6)
+    if figure_choice in ["20", "21"]:
+        plt.legend(title="MI Estimators", fontsize=11, loc='best')
+    else:
+       plt.legend(fontsize=11, loc='best')
+
+    plt.tick_params(axis='x', labelsize=12)
+    plt.tick_params(axis='y', labelsize=12)
+    from matplotlib.ticker import FormatStrFormatter
+    plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.tight_layout()
+
+    if figure_choice=="4b":
+        filename = f"figure_4b_{'_'.join(distribution_choices)}_{N_value}_{mi_estimate}.png"
+    elif figure_choice=="4":
+        filename = f"figure_4_{'_'.join({distribution_name})}_{selected_params}_{mi_estimate}.png"
+    elif figure_choice=="20":
+        filename = f"figure_20_{'_'.join({distribution_name})}_{selected_params}.png"
+    elif figure_choice=="21":
+        filename = f"figure_21_{'_'.join({distribution_name})}_{N_value}.png"
+    plt.savefig(filename, dpi=300, bbox_inches='tight')
+
+    # Force rendering before showing the plot to prevent resizing issues
+    plt.draw()
+
+    plt.show()
+
+
+
+def read_and_clean_data(file, mi_estimate):
+    """Legge i dati dal file e li pulisce rimuovendo valori inf e NaN."""
+    valid_data = []
+    with open(file, 'r') as f:
+        next(f)  # Salta l'intestazione
+        for line in f:
+            # Strip any leading/trailing whitespace
+            line = line.strip()
+            # Skip empty lines
+            if not line:
+                continue
+            # Convert the line into a float array (split by whitespace or tab)
+            row = np.fromstring(line, sep=' ')
+            if row.size >= (7 if "binning" in mi_estimate.lower() else 4):
+                col_idx = 4 if "binning" in mi_estimate.lower() else 1
+                # Check if it is not infinity or NaN
+                if not np.isinf(row[col_idx]) and not np.isnan(row[col_idx]):
+                    valid_data.append(row) # Add the row to the list if it's valid
+            else:
+                print(f"Skipping line due to insufficient columns: {line}")
+    return valid_data
+
+def process_theoretical_mi(distribution_name, selected_params):
+    """Calcola la mutua informazione teorica se disponibile."""
+    theoretical_mi_function = globals().get(f"{distribution_name}_mi_theoretical")
+    if theoretical_mi_function:
+        if "independent" in distribution_name:
+            return 0
+        required_params = inspect.signature(theoretical_mi_function).parameters
+        filtered_params = {key: float(value) for key, value in selected_params.items() if key in required_params}
+        theoretical_mi = theoretical_mi_function(**filtered_params)
+        print(f"Theoretical mutual information for {distribution_name}: {theoretical_mi}")
+        return theoretical_mi
+    print(f"No theoretical function found for {distribution_name}.")
+    return None
+
+def extract_N_values(files):
+    """Estrae tutti i valori unici di N dai file."""
+    N_values = sorted(set(int(re.search(r"size_(\d+)", os.path.basename(f)).group(1)) for f in files if re.search(r"size_(\d+)", os.path.basename(f))))
+    if not N_values:
+        print("No valid N values found..")
+        return
+    return N_values
+
+def extract_file_info(file, distribution_name, mi_estimate, log_transformed):
+    """Estrae i parametri e il valore di N dal nome del file."""
+    pattern = (rf"summary_{distribution_name}_(.*?)_size_(\d+)_log_transformed_({mi_estimate}).txt"
+               if log_transformed else
+               rf"summary_{distribution_name}_(.*?)_size_(\d+)_({mi_estimate}).txt")
+    
+    match = re.search(pattern, os.path.basename(file))
+    if match:
+        return match.group(1), int(match.group(2))  # (parametro, N)
+    return None, None
+
+def select_and_filter_files(files, distribution_name, mi_estimate, log_transformed):
+    """Seleziona i parametri e filtra i file in base alle scelte dell'utente."""
+    all_parameters, extracted_params_per_file = extract_parameters_from_paths(files, distribution_name, mi_estimate, log_transformed)
+    selected_params = {}
+
+    for param_name, param_values in all_parameters.items():
+        selected_params[param_name] = get_user_choices(list(param_values), f"Choose the value for {param_name}:", multiple=False)
+
+    filtered_files = filter_files_by_parameters(extracted_params_per_file, selected_params)
+
+    print("Selected files after filtering:")
+    for file in filtered_files:
+        print(file)
+
+    return filtered_files, selected_params
+
+
+def process_data_structure(valid_data, mi_estimate):
+    """Organizza i dati in colonne e restituisce una struttura adatta per il plotting."""
+    if "binning" in mi_estimate.lower():
+        data_cleaned = np.array(valid_data).reshape(-1, 7)
+        return data_cleaned[:, 2], data_cleaned[:, 1], data_cleaned[:, 3], data_cleaned[:, 4], data_cleaned[:, 6]  
+    else:
+        data_cleaned = np.array(valid_data).reshape(-1, 4)
+        return data_cleaned[:, 0], None, None, data_cleaned[:, 1], data_cleaned[:, 3]  # xlolims e xuplims sono None
