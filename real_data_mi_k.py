@@ -65,7 +65,7 @@ def import_raw_data(directory_path):
 
 
 
-def real_data_processing(data_dict, name_dict, n, h, k_list):
+def real_data_processing(data_dict, name_dict, n, h, k):
     for name in data_dict.keys():
         start = time.time()
         # data
@@ -79,25 +79,18 @@ def real_data_processing(data_dict, name_dict, n, h, k_list):
         logging.info(f'\n number of windows for {name} = {i_max}')
         # mi computation
         mi_array = np.zeros(i_max)
-        mi_supp = np.zeros(len(k_list))
+        supp = 0
 
         for j in range(i_max): # j=0,...,i_max-1
             # compute mi for each window
-            for l in range(len(k_list)):
-                mi_supp[l] = mutual_information_1(data_array[j*h: (j*h + n)], k=k_list[l])
-
-            
-            logging.info(f"End of mi computation for window {j}-th and file {name}")
-            
-                
-            max_mi_supp = np.max(mi_supp)
-            if max_mi_supp >= 0:
-                mi_array[j] = max_mi_supp
+            supp = mutual_information_1(data_array[j*h: (j*h + n)], k=k)
+            if supp >= 0:
+                mi_array[j] = supp
             else:
                 mi_array[j] = 0
 
         # save reuslts
-        directory_path = f'data/real_data/n_{n}/h_{h}/{name_dict}'
+        directory_path = f'data/real_data/n_{n}/h_{h}/mi1/k_{k}/{name_dict}'
         ensure_directory_exists(directory_path)
         file_name = f"mi_{name}.txt"
         file_path = os.path.join(directory_path, file_name)
@@ -122,21 +115,20 @@ if __name__ == "__main__":
     # import raw data
     data_dict_A, data_dict_C = import_raw_data(directory_path)
     raw_data = {'A': data_dict_A, 'C': data_dict_C}
-
-    # choose the values of k to explore
-    k_list = [5, 10, 20, 30, 40, 50, 60]
     
     parser = argparse.ArgumentParser(description="Process real data with given parameters.")
     parser.add_argument("--n", type=int, default=5000, help="Value for parameter n (default: 5000)")
-    parser.add_argument("--overlap", choices=['no_overlapping', 'half_overlapping'], required=True, help="Specify overlapping mode: 'no_overlapping' or 'half_overlapping'")
+    parser.add_argument("--overlap", choices=['no', 'half'], required=True, help="Specify overlapping mode: 'no' or 'half'")
+    parser.add_argument("--k", type=int, default=5, help="Value for parameter k (default: 50)")
     
     args = parser.parse_args()
     n = args.n
-    h = n if args.overlap == 'no_overlapping' else n // 2
-    logging.info(f"\nParameters: n={n}, h={h}")
+    h = n if args.overlap == 'no' else n // 2
+    k = args.k
+    logging.info(f"\nParameters: n={n}, h={h}, k={k}")
 
         
-    real_data_processing(raw_data['A'], 'A', n, h, k_list)
-    real_data_processing(raw_data['C'], 'C', n, h, k_list)
+    real_data_processing(raw_data['A'], 'A', n, h, k)
+    real_data_processing(raw_data['C'], 'C', n, h, k)
 
 

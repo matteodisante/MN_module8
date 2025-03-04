@@ -53,81 +53,106 @@ def configure_target_function(target_function, **kwargs):
 
 
 
+# Functions to compute theoretical mi
 def circular_mi_theoretical(a, b, c):
     """
     Calculate the theoretical mutual information for a circular distribution.
 
     :param a: Inner radius of the circular distribution.
-    :param b: Outer radius of the circular distribution.
-    :param c: Middle radius where the triangular distribution switches.
+    :param c: Outer radius of the circular distribution.
+    :param b: Middle radius where the triangular distribution switches.
     :return: Theoretical mutual information.
     """
-    def marginal_density(x):
+    def p_X(x):
         if abs(x) < a:
-            return 0
-        elif a <= abs(x) <= c:
-            return (2 / (np.pi * (b - a) * (c - a))) * (
-                np.sqrt(c**2 - x**2) - np.sqrt(a**2 - x**2) -
-                a * np.log((np.sqrt(c**2 - x**2) + c) / (np.sqrt(a**2 - x**2) + a))
+ 
+            term1 = (2 / (np.pi * (c - a) * (b - a))) * (
+                np.sqrt(b**2 - x**2) - np.sqrt(a**2 - x**2) -
+                a * np.log((np.sqrt(b**2 - x**2) + b) / (np.sqrt(a**2 - x**2) + a))
             )
-        elif c < abs(x) <= b:
-            return (2 / (np.pi * (b - a) * (b - c))) * (
-                b * np.log((np.sqrt(b**2 - x**2) + b) / (np.sqrt(c**2 - x**2) + c)) -
-                np.sqrt(b**2 - x**2) + np.sqrt(c**2 - x**2)
+            term2 = (2 / (np.pi * (c - a) * (c - b))) * (
+                np.sqrt(b**2 - x**2) - np.sqrt(c**2 - x**2) -
+                c * np.log((np.sqrt(b**2 - x**2) + b) / (np.sqrt(c**2 - x**2) + c))
             )
-        else:
+ 
+            return term1 + term2
+ 
+        elif a <= abs(x) <= b:
+            term1 = (2 / (np.pi * (c - a) * (b - a))) * (
+            np.sqrt(b**2 - x**2) - a * np.log((np.sqrt(b**2 - x**2) + b) / abs(x))
+            )
+            term2 = (2 / (np.pi * (c - a) * (c - b))) * (np.sqrt(b**2 - x**2) - np.sqrt(c**2 - x**2) - 
+            c * np.log((np.sqrt(b**2 - x**2) + b) / (np.sqrt(c**2 - x**2) + c))
+            )
+            return term1 + term2
+        elif b < abs(x) <= c:
+            return (2 / (np.pi * (c - a) * (c - b))) * (
+                c * np.log( (np.sqrt(c**2 - x**2) + c) / np.abs(x)) -
+                np.sqrt(c**2 - x**2))
+        else:     
             return 0
 
+
+
     def marginal_entropy():
-        result, _ = quad(lambda x: -marginal_density(x) * np.log(marginal_density(x) + 1e-12), -b, b)
-        return result
+        intervals = [-c, -b, -a, a, b, c]
+        total_integral = 0
+        
+        for i in range(len(intervals) - 1):
+            start, end = intervals[i], intervals[i+1]
+            integral, _ = quad(lambda x: -p_X(x) * np.log(p_X(x)), start, end)
+            total_integral += integral
+        
+        return total_integral
+    
 
     h_x = marginal_entropy()
 
     h_xy = (
-        0.5 + np.log(np.pi * (b - a))
-        - c**2 / ((c - a) * (b - c)) * (np.log(c) - 1.5)
-        + a**2 / ((b - a) * (c - a)) * (np.log(a) - 1.5)
-        + b**2 / ((b - a) * (b - c)) * (np.log(b) - 1.5)
+        0.5 + np.log(np.pi * (c - a))
+        - b**2 / ((b - a) * (c - b)) * (np.log(b) - 1.5)
+        + a**2 / ((c - a) * (b - a)) * (np.log(a) - 1.5)
+        + c**2 / ((c - a) * (c - b)) * (np.log(c) - 1.5)
     )
 
     return 2 * h_x - h_xy
+    
+    
 
 
-def weinman_exponential_mi_theoretical(u):
+def ordered_wienman_exponential_mi_theoretical(theta):
     """
-    Calculate the exact mutual information for the Weinman exponential distribution.
-
-    :param u: Parameter of the distribution (0 < u < 1 for the valid range).
-    :return: Mutual information (I_exact).
+    :param theta: Parameter of the distribution (theta > 0 for the valid range)
     """
-    if u < 0.5:
-        mi_exact = (
-            np.log((2 * u) / (1 - 2 * u)) +
-            digamma(1 / (1 - 2 * u)) -
-            digamma(1)
-        )
-    elif u > 0.5:
-        mi_exact = (
-            np.log((2 * u - 1) / u) +
-            digamma(2 * u / (2 * u - 1)) -
-            digamma(1)
-        )
+    if theta < 0.5:
+        mi_exact = np.log((1 - 2 * theta) / (2 * theta)) + digamma(1 / (1 - 2 * theta)) - digamma(1)
+    elif theta > 0.5:
+        mi_exact = np.log((2 * theta - 1) / (2 * theta)) + digamma((2 * theta) / (2 * theta - 1)) - digamma(1)
     else:
         mi_exact = - digamma(1)
     return mi_exact
 
 
-def gamma_exponential_mi_theoretical(u):
-    """
-    Calculate the exact mutual information for the Gamma exponential distribution.
+def gamma_exponential_mi_theoretical(theta):
+    if theta <= 0:
+        raise ValueError("The parameter theta must be greater than 0.")
+    mi_exact = digamma(theta + 1) - np.log(theta)
+    return mi_exact
 
-    :param u: Shape parameter of the Gamma distribution (u > 0).
-    :return: Mutual information (I_exact).
-    """
-    if u <= 0:
-        raise ValueError("The parameter u must be greater than 0.")
-    mi_exact = digamma(u + 1) - np.log(u)
+def correlated_gaussian_rv_mi_theoretical(corr):
+    mi_exact = - 0.5 * np.log(1-corr**2)
+    return mi_exact
+
+def independent_exponential_rv_mi_theoretical():
+    mi_exact = 0
+    return mi_exact
+
+def independent_gaussian_rv_mi_theoretical():
+    mi_exact = 0
+    return mi_exact
+
+def independent_uniform_rv_mi_theoretical():
+    mi_exact = 0
     return mi_exact
 
 
@@ -161,17 +186,6 @@ def transform_to_bilog_scale(file_path):
     return transformed_rows
     
     
-def bivariate_normal_mi_theoretical(r):
-    """
-    Calculate the exact mutual information for the bivariate normal distribution.
-    
-    :param u: Correlation as a parameter of the bivariate normal pdf (r > 0).
-    :return: Mutual information (I_exact).
-    """
-    if r < -1 or r>1:
-        raise ValueError("The correlation r must be between -1 and 1.")
-    mi_exact = -0.5*np.log(1-r**2)
-    return mi_exact
 
 
 
