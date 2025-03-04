@@ -51,7 +51,7 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
             plt.errorbar(first_column/N, means, yerr=sigmas, linestyle='--', fmt='.', capsize=1, markersize=3, linewidth=0.93, alpha=0.7, label=f'N={N}')
         legend_labels.append(f'N={N}')
 
-    format_plot(mi_estimate=mi_estimate, figure_choice="4" ,distribution_name=distribution_name, selected_params=selected_params)
+    format_plot(mi_estimate=mi_estimate, figure_choice="4" ,distribution_name=distribution_name, selected_params=selected_params, theoretical_mi=theoretical_mi)
 
 
 

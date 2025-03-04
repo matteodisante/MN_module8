@@ -331,7 +331,8 @@ def extract_k_or_bins_values_from_files(files):
 
 
 
-def format_plot(mi_estimate="", figure_choice="4", is_independent=False, N_value=1, distribution_name='gaussian', param_name_mapping = {} ,distribution_choices=['gauss','exp'], selected_params={}):
+def format_plot(mi_estimate="", figure_choice="4", is_independent=False, N_value=1, distribution_name='gaussian', 
+                param_name_mapping = {} ,distribution_choices=['gauss','exp'], selected_params={}, theoretical_mi=1):
     """Imposta le etichette e lo stile del plot."""
     subscript = {"mi_1": "1", "mi_sum": "sum", "mi_binning": "binning"}.get(mi_estimate, "")
 
@@ -345,7 +346,10 @@ def format_plot(mi_estimate="", figure_choice="4", is_independent=False, N_value
                 r"I$_{\mathrm{estimate}}$/I$_{\mathrm{theoretical}}$")
     plt.ylabel(ylabel, fontsize=14)
 
-    plt.axhline(y=(0.0 if is_independent else 1.0), color='r', linestyle='--', linewidth=0.5, label='_nolegend_')
+    if figure_choice=="4":
+        plt.axhline(y=theoretical_mi, color='r', linestyle='--', linewidth=0.5, label=r"I$_{\mathrm{theoretical}}$:"+f"{np.abs(theoretical_mi):.3f}")
+    else:
+        plt.axhline(y=(0.0 if is_independent else 1.0), color='r', linestyle='--', linewidth=0.5, label='_nolegend_')
 
     plt.xscale('log')
     if figure_choice=="4b":
