@@ -30,7 +30,7 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
                 # Store the data in the dictionary, using N as the key
                 data_dict[N] = (x_values, xlolims, xuplims, means, sigmas)
             else: 
-                data_dict[N] = (x_values, means, sigmas)
+                data_dict[N] = (first_column, means, sigmas)
 
     # Sort the dictionary by N in ascending order
     sorted_N_values = sorted(data_dict.keys())
@@ -40,7 +40,7 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
         if "binning" in mi_estimate.lower():
             x_values, xlolims, xuplims, means, sigmas = data_dict[N]
         else:
-            x_values, means, sigmas = data_dict[N]
+            first_column, means, sigmas = data_dict[N]
 
         if "binning" in mi_estimate.lower():
             x_err_left = x_values - xlolims
@@ -48,7 +48,7 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
             x_errors = [x_err_left/N, x_err_right/N]
             plt.errorbar(x_values/N, means, yerr=sigmas, xerr=x_errors, linestyle='--', fmt='.', capsize=1, markersize=3, linewidth=0.93, alpha=0.7, label=f'N={N}') 
         else:
-            plt.errorbar(x_values/N, means, yerr=sigmas, linestyle='--', fmt='.', capsize=1, markersize=3, linewidth=0.93, alpha=0.7, label=f'N={N}')
+            plt.errorbar(first_column/N, means, yerr=sigmas, linestyle='--', fmt='.', capsize=1, markersize=3, linewidth=0.93, alpha=0.7, label=f'N={N}')
         legend_labels.append(f'N={N}')
 
     format_plot(mi_estimate=mi_estimate, figure_choice="4" ,distribution_name=distribution_name, selected_params=selected_params)
@@ -158,9 +158,9 @@ def plot_figure4b(distribution_choices, distribution_data, mi_estimate, N_value,
                         plt.errorbar(x_values, means/theoretical_mi, yerr=sigmas/np.abs(theoretical_mi), xerr=x_errors, linestyle='--', fmt='.', capsize=1, markersize=3, linewidth=0.93, alpha=0.5, label=label)
                 else:
                     if is_independent:
-                        plt.errorbar(x_values, means, yerr=sigmas, linestyle='--', fmt='.', capsize=1, markersize=3, linewidth=0.93, alpha=0.5, label=label)
+                        plt.errorbar(first_column, means, yerr=sigmas, linestyle='--', fmt='.', capsize=1, markersize=3, linewidth=0.93, alpha=0.5, label=label)
                     else:
-                        plt.errorbar(x_values, means/theoretical_mi, yerr=sigmas/np.abs(theoretical_mi), linestyle='--', fmt='.', capsize=1, markersize=3, linewidth=0.93, alpha=0.5, label=label)
+                        plt.errorbar(first_column, means/theoretical_mi, yerr=sigmas/np.abs(theoretical_mi), linestyle='--', fmt='.', capsize=1, markersize=3, linewidth=0.93, alpha=0.5, label=label)
             else:
                 print(f"Skipping plot for {distribution_name} with parameter value {param_value} due to missing theoretical MI.")
 
