@@ -1,9 +1,9 @@
 import numpy as np
 
 # Funzione per generare campioni da una densità triangolare
-def generate_triangular(a, b, c, size):
+def generate_triangular(a, b, c, size, rng):
     
-    u = np.random.uniform(0, 1, size)  # Campiona U uniformemente
+    u = rng.uniform(0, 1, size)  # Campiona U uniformemente
     r = np.zeros(size)  # Pre-alloca i valori di R
 
     # Maschere per i due intervalli
