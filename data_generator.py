@@ -74,16 +74,19 @@ def generate_and_save_data(config, selected_distribution_name, selected_size=Non
             if overwrite == 'n':
                 print(f"Skipping generation for size {size}.")
                 continue
+        
+        # Creazione di un'istanza del generatore basato su PCG64
+        rng = np.random.default_rng()  # Usa PCG64 come PRNG
 
         # Dictionary to map distributions to their respective generation functions
         distribution_functions = {
-            "independent_gaussian_rv": lambda params, size: independent_gaussian_rv(params['mu'], params['sigma'], size),
+            "independent_gaussian_rv": lambda params, size: independent_gaussian_rv(params['mu'], params['sigma'], size, rng),
             "correlated_gaussian_rv": lambda params, size: correlated_gaussian_rv(params['mu'], params['sigma'], distribution['correlation'], size),
-            "independent_uniform_rv": lambda params, size: independent_uniform_rv(params['low'], params['high'], size),
-            "independent_exponential_rv": lambda params, size: independent_exponential_rv(params['lambda'], size),
-            "gamma_exponential": lambda params, size: gamma_exponential(params['theta'], size),
-            "ordered_wienman_exponential": lambda params, size: ordered_wienman_exponential(params['theta'], size),
-            "circular": lambda params, size: circular(params['a'], params['b'], params['c'], size),
+            "independent_uniform_rv": lambda params, size: independent_uniform_rv(params['low'], params['high'], size, rng),
+            "independent_exponential_rv": lambda params, size: independent_exponential_rv(params['lambda'], size, rng),
+            "gamma_exponential": lambda params, size: gamma_exponential(params['theta'], size, rng),
+            "ordered_wienman_exponential": lambda params, size: ordered_wienman_exponential(params['theta'], size, rng),
+            "circular": lambda params, size: circular(params['a'], params['b'], params['c'], size, rng),
         }
 
         # Retrieve the generation function
