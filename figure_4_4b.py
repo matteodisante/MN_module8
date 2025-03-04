@@ -24,7 +24,7 @@ def plot_figure_4(files, distribution_name, mi_estimate, theoretical_mi, log_tra
         if N is not None:
 
             valid_data = read_and_clean_data(file, mi_estimate)
-            x_values, xlolims, xuplims, means, sigmas = process_data_structure(valid_data, mi_estimate)
+            first_column, x_values, xlolims, xuplims, means, sigmas = process_data_structure(valid_data, mi_estimate)
 
             if "binning" in mi_estimate.lower():
                 # Store the data in the dictionary, using N as the key
@@ -128,11 +128,9 @@ def plot_figure4b(distribution_choices, distribution_data, mi_estimate, N_value,
                 # Match the file based on its naming convention
                 match = re.search(rf"summary_{distribution_name}_(.*?)_size_{N_value}_(.*?).txt", os.path.basename(file))
                 if match:
-                    extracted_param = match.group(1)
-
                     valid_data = read_and_clean_data(file, mi_estimate)
 
-            x_values, xlolims, xuplims, means, sigmas = process_data_structure(valid_data, mi_estimate)
+            first_column, x_values, xlolims, xuplims, means, sigmas = process_data_structure(valid_data, mi_estimate)
 
             # Normalize the mean values by the theoretical MI (if available)
             if theoretical_mi is not None:

@@ -333,15 +333,7 @@ def extract_k_or_bins_values_from_files(files):
 
 def format_plot(mi_estimate="", figure_choice="4", is_independent=False, N_value=1, distribution_name='gaussian', param_name_mapping = {} ,distribution_choices=['gauss','exp'], selected_params={}):
     """Imposta le etichette e lo stile del plot."""
-    # Map to transform mi_estimate to the subscript format
-    subscript_map = {
-        "mi_1": "1",
-        "mi_sum": "sum",
-        "mi_binning": "binning"
-    }
-
-    # Get the correct subscript
-    subscript = subscript_map.get(mi_estimate, "")
+    subscript = {"mi_1": "1", "mi_sum": "sum", "mi_binning": "binning"}.get(mi_estimate, "")
 
     if figure_choice in ["4b"]:
         ylabel = (r"I$_{\mathrm{" + subscript + r"}}$" if is_independent else
@@ -473,7 +465,7 @@ def process_data_structure(valid_data, mi_estimate):
     """Organizza i dati in colonne e restituisce una struttura adatta per il plotting."""
     if "binning" in mi_estimate.lower():
         data_cleaned = np.array(valid_data).reshape(-1, 7)
-        return data_cleaned[:, 2], data_cleaned[:, 1], data_cleaned[:, 3], data_cleaned[:, 4], data_cleaned[:, 6]  
+        return data_cleaned[:, 0], data_cleaned[:, 2], data_cleaned[:, 1], data_cleaned[:, 3], data_cleaned[:, 4], data_cleaned[:, 6]  
     else:
         data_cleaned = np.array(valid_data).reshape(-1, 4)
-        return data_cleaned[:, 0], None, None, data_cleaned[:, 1], data_cleaned[:, 3]  # xlolims e xuplims sono None
+        return data_cleaned[:, 0], None, None, None, data_cleaned[:, 1], data_cleaned[:, 3]  # xlolims e xuplims sono None
