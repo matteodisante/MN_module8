@@ -173,6 +173,9 @@ def generate_plot(
 
 
 
+
+
+# Functions used in the plotting files
 def load_config_distributions():
     """Loads the config.json file from the same directory as the script and returns the available distributions."""
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -185,19 +188,6 @@ def load_config_distributions():
     config = load_config(config_path)
     return [dist["name"] for dist in config["distributions"]]
 
-def get_user_choice(options, prompt):
-    """Asks the user to choose a valid option."""
-    while True:
-        print(prompt)
-        for idx, option in enumerate(options, 1):
-            print(f"{idx}. {option}")
-        choice = input("Enter the corresponding number: ")
-        
-        if choice.isdigit():
-            choice = int(choice)
-            if 1 <= choice <= len(options):
-                return options[choice - 1]
-        print("Invalid choice. Please try again.")
 
 def get_user_choices(options, prompt, multiple=False):
     """Asks the user to choose one or more valid options."""
@@ -329,8 +319,6 @@ def extract_k_or_bins_values_from_files(files):
     return sorted(x_values)
 
 
-
-
 def format_plot(mi_estimate="", figure_choice="4", is_independent=False, N_value=1, distribution_name='gaussian', 
                 param_name_mapping = {} ,distribution_choices=['gauss','exp'], selected_params={}, theoretical_mi=1):
     """Imposta le etichette e lo stile del plot."""
@@ -344,36 +332,40 @@ def format_plot(mi_estimate="", figure_choice="4", is_independent=False, N_value
     elif figure_choice in ["20", "21"]:
         ylabel = (r"I$_{\mathrm{estimate}}$" if is_independent else
                 r"I$_{\mathrm{estimate}}$/I$_{\mathrm{theoretical}}$")
+    elif figure_choice=="9":
+        ylabel = (r"I$_{\mathrm{" + subscript + r"}}$-I$_{\mathrm{theoretical}}$")
+    elif figure_choice=="7":
+        ylabel = (r"I$_{\mathrm{" + subscript + r"}}$/I$_{\mathrm{theoretical}}$")
+    elif figure_choice=="8":
+        ylabel = "Standard Deviation"
     plt.ylabel(ylabel, fontsize=14)
 
     if figure_choice=="4":
         plt.axhline(y=theoretical_mi, color='r', linestyle='--', linewidth=0.5, label=r"I$_{\mathrm{theoretical}}$:"+f"{np.abs(theoretical_mi):.3f}")
-    else:
-        plt.axhline(y=(0.0 if is_independent else 1.0), color='r', linestyle='--', linewidth=0.5, label='_nolegend_')
+    elif figure_choice != "8":
+        plt.axhline(y=(0.0 if is_independent or figure_choice=="9" else 1.0), color='r', linestyle='--', linewidth=0.5, label='_nolegend_')
 
     plt.xscale('log')
+
     if figure_choice=="4b":
         plt.xlabel(r"Number of non-zero cells" if mi_estimate == "mi_binning" else "k", fontsize=14)
     elif figure_choice=="4": 
         plt.xlabel(r"Number of non-zero cells/N" if mi_estimate == "mi_binning" else "k/N", fontsize=14)
     elif figure_choice in ["20", "7", "9"]:
         plt.xlabel(r"1/N", fontsize=14)
-    elif figure_choice in ["8"]:
+    elif figure_choice=="8":
         plt.xlabel(r"N", fontsize=14)
-    else:
+    elif figure_choice=="21":
         plt.xlabel(param_name_mapping, fontsize=14)
 
     plt.grid(True, linestyle='--', alpha=0.6)
-    if figure_choice in ["20", "21"]:
-        plt.legend(title="MI Estimators", fontsize=11, loc='best')
-    else:
-       plt.legend(fontsize=11, loc='best')
+    plt.legend(fontsize=11, loc='best')
 
     plt.tick_params(axis='x', labelsize=12)
     plt.tick_params(axis='y', labelsize=12)
-    from matplotlib.ticker import FormatStrFormatter
-    plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
-    plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    #from matplotlib.ticker import FormatStrFormatter
+    #plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    #plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     plt.tight_layout()
 
     if figure_choice=="4b":
@@ -384,6 +376,12 @@ def format_plot(mi_estimate="", figure_choice="4", is_independent=False, N_value
         filename = f"figure_20_{'_'.join({distribution_name})}_{selected_params}.png"
     elif figure_choice=="21":
         filename = f"figure_21_{'_'.join({distribution_name})}_{N_value}.png"
+    elif figure_choice=="7":
+        filename = f"figure_7_{'_'.join({distribution_name})}_{mi_estimate}.png"
+    elif figure_choice=="9":
+        filename = f"figure_9_{'_'.join({distribution_name})}_{mi_estimate}.png"
+    elif figure_choice=="8":
+        filename = f"figure_8_{'_'.join({distribution_name})}_{selected_params}_{mi_estimate}.png"
     plt.savefig(filename, dpi=300, bbox_inches='tight')
 
     # Force rendering before showing the plot to prevent resizing issues
