@@ -225,6 +225,10 @@ if __name__ == "__main__":
         file_extension=file_extension
     )
     
+    # Filtra i file log se l'utente ha scelto i file normali
+    if file_type_choice == "norm":
+        selected_files = [f for f in selected_files if not f.endswith("_log.txt")]
+    
     if not selected_files:
         print("No files selected. Exiting.")
         exit()
