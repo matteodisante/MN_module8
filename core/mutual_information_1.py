@@ -22,8 +22,14 @@ def mutual_information_1(dataset, k, n_jobs=2):
     dataset = np.asarray(dataset)
     n_samples, n_variables = dataset.shape
     
+    # Verifica che k sia valido
+    if k <= 0 or k >= n_samples:
+        raise ValueError("k deve essere maggiore di 0 e minore del numero di campioni.")
+    
     # Step 1: Find k-nearest neighbors in the joint space
     distances = find_k_nearest_neighbors(dataset, k)
+    if distances is None:
+        raise ValueError("Error computing joint k-nearest neighbors.")
     epsilon = 2 * distances  # 2 * distance to the k-th nearest neighbor for each point
     
     
