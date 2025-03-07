@@ -148,7 +148,7 @@ def test_mi_sum(raw_data, n, h):
                 plt.plot(k_list, mi_supp, marker='.', linestyle='--', markersize=10)
                 plt.xlabel('k')
                 plt.ylabel('I')
-                plt.title(f"mi1/n_{n}/h_{h}/{name}/window{j}")
+                plt.title(f"mi_sum/n_{n}/h_{h}/{name}/window{j}")
                 plt.grid()
                 plt.savefig(f"test_real_data/n_{n}/h_{h}/mi_sum/{name}/window{j}.png")
                 plt.close()
