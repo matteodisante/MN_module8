@@ -2,10 +2,12 @@ import os
 import numpy as np
 import pandas as pd
 import sys
+import argparse
 import matplotlib.pyplot as plt
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'core/')))
 from mutual_information_1 import mutual_information_1
-from core.mutual_information_binning import mutual_information_binning_adaptive
+from mutual_information_binning import mutual_information_binning_adaptive
+from mutual_information_1_entropies_sum import mutual_information_1_entropies_sum
 
 
 def ensure_directory_exists(directory_path):
@@ -67,7 +69,7 @@ def test_mi1(raw_data, n, h):
     name_dict = {'A': name_A, 'C': name_C}
 
     # choose the values of k to explore
-    k_list = [1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 80, 100, 150, 200]
+    k_list = [1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 80, 100, 150, 200, 300, 400, 500]
 
     for choice in ['A', 'C']:
         data_dict = raw_data[choice]
@@ -87,7 +89,7 @@ def test_mi1(raw_data, n, h):
             # mi computation
             mi_supp = np.zeros(len(k_list))
 
-            directory_path = f"test_real_data/mi1/n_{n}/h_{h}/{name}"
+            directory_path = f"test_real_data/n_{n}/h_{h}/mi1/{name}"
             ensure_directory_exists(directory_path)
 
             for j in range(i_max): # j=0,...,i_max-1
@@ -97,12 +99,58 @@ def test_mi1(raw_data, n, h):
 
                 # plot window
                 plt.figure()
-                plt.scatter(k_list, mi_supp)
+                plt.plot(k_list, mi_supp, marker='.', linestyle='--', markersize=10)
                 plt.xlabel('k')
                 plt.ylabel('I')
                 plt.title(f"mi1/n_{n}/h_{h}/{name}/window{j}")
                 plt.grid()
-                plt.savefig(f"test_real_data/mi1/n_{n}/h_{h}/{name}/window{j}.png")
+                plt.savefig(f"test_real_data/n_{n}/h_{h}/mi1/{name}/window{j}.png")
+                plt.close()
+
+
+def test_mi_sum(raw_data, n, h):
+
+    name_A = ['A14F3-TE10034', 'A15F3-TE10034', 'A16F3-TE10034']
+    name_C = ['C11F3-VE', 'C12F3-VE', 'C13F3-VE']
+    name_dict = {'A': name_A, 'C': name_C}
+
+    # choose the values of k to explore
+    k_list = [1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 80, 100, 150, 200, 300, 400, 500]
+
+    for choice in ['A', 'C']:
+        data_dict = raw_data[choice]
+
+        for name in name_dict[choice]:
+            data_array = data_dict[name]
+
+            # number of windows
+            i = 0
+            while (i*h + n) <= len(data_array):
+                i+=1
+            i_max = i  # actually we are interested in i-1, but for the subquent for cycle is reasonable to save i_max=i
+            print(f'\nNumber of windows for {name} = {i_max}')
+
+            i_max=10
+
+            # mi computation
+            mi_supp = np.zeros(len(k_list))
+
+            directory_path = f"test_real_data/n_{n}/h_{h}/mi_sum/{name}"
+            ensure_directory_exists(directory_path)
+
+            for j in range(i_max): # j=0,...,i_max-1
+                # compute mi for each window
+                for l in range(len(k_list)):
+                    mi_supp[l] = mutual_information_1_entropies_sum(data_array[j*h: (j*h + n)], k=k_list[l])
+
+                # plot window
+                plt.figure()
+                plt.plot(k_list, mi_supp, marker='.', linestyle='--', markersize=10)
+                plt.xlabel('k')
+                plt.ylabel('I')
+                plt.title(f"mi1/n_{n}/h_{h}/{name}/window{j}")
+                plt.grid()
+                plt.savefig(f"test_real_data/n_{n}/h_{h}/mi_sum/{name}/window{j}.png")
                 plt.close()
 
 
@@ -113,7 +161,9 @@ def test_binning(raw_data, n, h):
     name_dict = {'A': name_A, 'C': name_C}
 
     # choose the values of k to explore
-    k_list = [8, 16, 24, 32, 64]
+    # large search
+    # k_list = np.arange(8, 65, 2)
+    k_list = np.arange(4, 41)
 
     for choice in ['A', 'C']:
         data_dict = raw_data[choice]
@@ -133,7 +183,7 @@ def test_binning(raw_data, n, h):
             # mi computation
             mi_supp = np.zeros(len(k_list))
 
-            directory_path = f"test_real_data/binning/n_{n}/h_{h}/{name}"
+            directory_path = f"test_real_data/n_{n}/h_{h}/binning/{name}"
             ensure_directory_exists(directory_path)
 
             for j in range(i_max): # j=0,...,i_max-1
@@ -143,16 +193,27 @@ def test_binning(raw_data, n, h):
 
                 # plot window
                 plt.figure()
-                plt.scatter(k_list, mi_supp)
+                plt.plot(k_list**2, mi_supp, marker='.', linestyle='--', markersize=10)
                 plt.xlabel('k')
                 plt.ylabel('I')
                 plt.title(f"binning/n_{n}/h_{h}/{name}/window{j}")
                 plt.grid()
-                plt.savefig(f"test_real_data/binning/n_{n}/h_{h}/{name}/window{j}.png")
+                plt.savefig(f"test_real_data/n_{n}/h_{h}/binning/{name}/window{j}.png")
                 plt.close()
 
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="Test on real data with given parameters.")
+    parser.add_argument("--n", type=int, default=5000, help="Value for parameter n (default: 5000)")
+    parser.add_argument("--overlap", choices=['no', 'half'], required=True, help="Specify overlapping mode: 'no' or 'half'")
+    parser.add_argument("--alg", choices=['mi1', 'binning', 'misum', 'all'], required=True, help="Specify algorithm to test")
+    
+    args = parser.parse_args()
+    n = args.n
+    h = n if args.overlap == 'no' else n // 2
+    alg = args.alg
+
     # directory path
     directory_path = "data/real_data/raw_data"
 
@@ -160,10 +221,19 @@ if __name__ == "__main__":
     data_dict_A, data_dict_C = import_raw_data(directory_path)
     raw_data = {'A': data_dict_A, 'C': data_dict_C}
 
-    n = 5000
-    h = n // 2
 
-    test_mi1(raw_data, n, h)
-    test_binning(raw_data, n, h)
+    if alg == 'mi1':
+        test_mi1(raw_data, n, h)
 
+    if alg == 'misum':
+        test_mi_sum(raw_data, n, h)
+
+    elif alg == 'binning':
+        test_binning(raw_data, n, h)
+
+
+    elif alg == 'all':
+        test_mi1(raw_data, n, h)
+        test_mi_sum(raw_data, n, h)
+        test_binning(raw_data, n, h)
     
