@@ -11,7 +11,6 @@ from mutual_information_1 import mutual_information_1
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'utils/')))
 from interface_utils import setup_logger
 
-
 def ensure_directory_exists(directory_path):
     """
     Checks if a directory exists, and creates it if it does not.xxs
@@ -90,7 +89,7 @@ def real_data_processing(data_dict, name_dict, n, h, k):
                 mi_array[j] = 0
 
         # save reuslts
-        directory_path = f'data/real_data/n_{n}/h_{h}/mi1/k_{k}/{name_dict}'
+        directory_path = f'data/real_data/n_{n}/h_{h}/mi_1/k_{k}/{name_dict}'
         ensure_directory_exists(directory_path)
         file_name = f"mi_{name}.txt"
         file_path = os.path.join(directory_path, file_name)
@@ -119,7 +118,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process real data with given parameters.")
     parser.add_argument("--n", type=int, default=5000, help="Value for parameter n (default: 5000)")
     parser.add_argument("--overlap", choices=['no', 'half'], required=True, help="Specify overlapping mode: 'no' or 'half'")
-    parser.add_argument("--k", type=int, default=5, help="Value for parameter k (default: 50)")
+    parser.add_argument("--k", type=int, default=1, help="Value for parameter k (default: 1)")
     
     args = parser.parse_args()
     n = args.n
