@@ -11,7 +11,6 @@ from mutual_information_1_entropies_sum import mutual_information_1_entropies_su
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'utils/')))
 from interface_utils import setup_logger
 
-
 def ensure_directory_exists(directory_path):
     """
     Checks if a directory exists, and creates it if it does not.xxs
