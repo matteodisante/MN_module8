@@ -89,7 +89,7 @@ def test_mi1(raw_data, n, h):
             # mi computation
             mi_supp = np.zeros(len(k_list))
 
-            directory_path = f"test_real_data/n_{n}/h_{h}/mi1/{name}"
+            directory_path = f"test_real_data/n_{n}/h_{h}/mi_1/{name}"
             ensure_directory_exists(directory_path)
 
             for j in range(i_max): # j=0,...,i_max-1
@@ -102,9 +102,9 @@ def test_mi1(raw_data, n, h):
                 plt.plot(k_list, mi_supp, marker='.', linestyle='--', markersize=10)
                 plt.xlabel('k')
                 plt.ylabel('I')
-                plt.title(f"mi1/n_{n}/h_{h}/{name}/window{j}")
+                plt.title(f"mi_1/n_{n}/h_{h}/{name}/window{j}")
                 plt.grid()
-                plt.savefig(f"test_real_data/n_{n}/h_{h}/mi1/{name}/window{j}.png")
+                plt.savefig(f"test_real_data/n_{n}/h_{h}/mi_1/{name}/window{j}.png")
                 plt.close()
 
 
@@ -183,7 +183,7 @@ def test_binning(raw_data, n, h):
             # mi computation
             mi_supp = np.zeros(len(k_list))
 
-            directory_path = f"test_real_data/n_{n}/h_{h}/binning/{name}"
+            directory_path = f"test_real_data/n_{n}/h_{h}/mi_binning/{name}"
             ensure_directory_exists(directory_path)
 
             for j in range(i_max): # j=0,...,i_max-1
@@ -194,11 +194,11 @@ def test_binning(raw_data, n, h):
                 # plot window
                 plt.figure()
                 plt.plot(k_list**2, mi_supp, marker='.', linestyle='--', markersize=10)
-                plt.xlabel('k')
+                plt.xlabel('n_bins')
                 plt.ylabel('I')
-                plt.title(f"binning/n_{n}/h_{h}/{name}/window{j}")
+                plt.title(f"mi_binning/n_{n}/h_{h}/{name}/window{j}")
                 plt.grid()
-                plt.savefig(f"test_real_data/n_{n}/h_{h}/binning/{name}/window{j}.png")
+                plt.savefig(f"test_real_data/n_{n}/h_{h}/mi_binning/{name}/window{j}.png")
                 plt.close()
 
 
