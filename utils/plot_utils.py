@@ -324,7 +324,7 @@ def format_plot(mi_estimate="", figure_choice="4", is_independent=False, N_value
     """Imposta le etichette e lo stile del plot."""
     subscript = {"mi_1": "1", "mi_sum": "sum", "mi_binning": "binning"}.get(mi_estimate, "")
 
-    if figure_choice in ["4b"]:
+    if figure_choice in ["4b", "4c"]:
         ylabel = (r"I$_{\mathrm{" + subscript + r"}}$" if is_independent else
                 r"I$_{\mathrm{" + subscript + r"}}$/I$_{\mathrm{theoretical}}$")
     elif figure_choice=="4":
@@ -340,8 +340,8 @@ def format_plot(mi_estimate="", figure_choice="4", is_independent=False, N_value
         ylabel = "Standard Deviation"
     plt.ylabel(ylabel, fontsize=14)
 
-    if figure_choice=="4":
-        plt.axhline(y=theoretical_mi, color='r', linestyle='--', linewidth=0.5, label=r"I$_{\mathrm{theoretical}}$:"+f"{np.abs(theoretical_mi):.3f}")
+    if figure_choice in ["4", "4c"]:
+        plt.axhline(y=theoretical_mi, color='b', linestyle='-', linewidth=0.5, label=r"I$_{\mathrm{theoretical}}$:"+f"{np.abs(theoretical_mi):.3f}")
     elif figure_choice != "8":
         plt.axhline(y=(0.0 if is_independent or figure_choice=="9" else 1.0), color='r', linestyle='--', linewidth=0.5, label='_nolegend_')
 
@@ -349,7 +349,7 @@ def format_plot(mi_estimate="", figure_choice="4", is_independent=False, N_value
 
     if figure_choice=="4b":
         plt.xlabel(r"Number of non-zero cells" if mi_estimate == "mi_binning" else "k", fontsize=14)
-    elif figure_choice=="4": 
+    elif figure_choice in ["4", "4c"]: 
         plt.xlabel(r"Number of non-zero cells/N" if mi_estimate == "mi_binning" else "k/N", fontsize=14)
     elif figure_choice in ["20", "7", "9"]:
         plt.xlabel(r"1/N", fontsize=14)
@@ -372,6 +372,8 @@ def format_plot(mi_estimate="", figure_choice="4", is_independent=False, N_value
         filename = f"figure_4b_{'_'.join(distribution_choices)}_{N_value}_{mi_estimate}.png"
     elif figure_choice=="4":
         filename = f"figure_4_{'_'.join({distribution_name})}_{selected_params}_{mi_estimate}.png"
+    elif figure_choice=="4c":
+        filename = f"figure_4c_{'_'.join({distribution_name})}_{selected_params}_{mi_estimate}.png"
     elif figure_choice=="20":
         filename = f"figure_20_{'_'.join({distribution_name})}_{selected_params}.png"
     elif figure_choice=="21":
