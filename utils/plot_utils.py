@@ -340,9 +340,9 @@ def format_plot(mi_estimate="", figure_choice="4", is_independent=False, N_value
         ylabel = "Standard Deviation"
     plt.ylabel(ylabel, fontsize=14)
 
-    if figure_choice in ["4"]:
+    if figure_choice in ["4"]: 
         plt.axhline(y=theoretical_mi, color='b', linestyle='-', linewidth=0.5, label=r"I$_{\mathrm{theoretical}}$:"+f"{np.abs(theoretical_mi):.3f}")
-    if figure_choice in ["4c"]:
+    elif figure_choice in ["4c"]:
         plt.axhline(y=1, color='b', linestyle='-', linewidth=0.5, label=r"I$_{\mathrm{theoretical}}$:"+f"{np.abs(theoretical_mi):.3f}")
     elif figure_choice != "8":
         plt.axhline(y=(0.0 if is_independent or figure_choice=="9" else 1.0), color='r', linestyle='--', linewidth=0.5, label='_nolegend_')
