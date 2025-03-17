@@ -75,8 +75,8 @@ def generate_and_save_data(config, selected_distribution_name, selected_size=Non
                 print(f"Skipping generation for size {size}.")
                 continue
         
-        # Creazione di un'istanza del generatore basato su PCG64
-        rng = np.random.default_rng()  # Usa PCG64 come PRNG
+        # Creation of a generator's instance based on PCG64 
+        rng = np.random.default_rng()  # Use PCG64 as PRNG
 
         # Dictionary to map distributions to their respective generation functions
         distribution_functions = {
