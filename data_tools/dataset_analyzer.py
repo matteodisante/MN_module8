@@ -9,7 +9,7 @@ from interface_utils import navigate_directories
 from io_utils import load_data, save_data
 
 
-def get_output_file_path_for_mean_statistics(original_file_path):
+def get_output_file_path_for_mean_statistics(original_file_path, file_type_choice):
     """
     Generates the corresponding output file path for a given input file, 
     keeping the base directory '../data/synthetic_data_statistics/' 
@@ -25,8 +25,12 @@ def get_output_file_path_for_mean_statistics(original_file_path):
     file_name = os.path.basename(original_file_path)
     file_dir = os.path.dirname(original_file_path)
     
-    # Modify the file name to add the '_mean_statistics' suffix
-    output_file_name = file_name.replace("01.txt", "mean_statistics_over_files.txt")
+    if file_type_choice == 'norm':
+        # Modify the file name to add the '_mean_statistics' suffix
+        output_file_name = file_name.replace("01.txt", "mean_statistics_over_files.txt")
+    elif file_type_choice == 'log':
+        # Modify the file name to add the '_mean_statistics' suffix
+        output_file_name = file_name.replace("log.txt", "mean_statistics_over_log_files.txt")
     
     # Ensure the output directory exists
     output_dir = os.path.join(base_output_dir, os.path.relpath(file_dir, "../data/synthetic_data/"))
@@ -83,10 +87,30 @@ if __name__ == '__main__':
     file_paths = []  # Inizializza la variabile
     
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+      
+    # Chiedi all'utente di selezionare il tipo di file
+    file_type_choice = input("Do you want to select normal files (e.g., 01.txt) or log files (e.g., log_01.txt)? [norm/log]: ").strip().lower()
     
-    while not file_paths:  # Se nessun file è selezionato, continua a chiedere
-        file_paths = navigate_directories(start_path="../data/synthetic_data/", multi_select=True, file_extension=".txt")
+    # Determina l'estensione in base alla scelta dell'utente
+    if file_type_choice == "log":
+        file_extension = "_log.txt"
+    elif file_type_choice == "norm":
+        file_extension = ".txt"
+    else:
+        print("Invalid choice. Exiting.")
+        exit()
     
+    # Seleziona i file dalla directory
+    file_paths = navigate_directories(
+        start_path='../data/synthetic_data',
+        multi_select=True,
+        file_extension=file_extension
+    )
+    
+    # Filtra i file log se l'utente ha scelto i file normali
+    if file_type_choice == "norm":
+        file_paths = [f for f in file_paths if not f.endswith("_log.txt")]
+     
     logging.info('Loading files')
     data_list = [load_data(file) for file in file_paths]
     
@@ -122,7 +146,7 @@ if __name__ == '__main__':
 
 
     # Call the get_output_file_path_for_mean_statistics to generate the path dynamically
-    output_path = get_output_file_path_for_mean_statistics(file_paths[0])
+    output_path = get_output_file_path_for_mean_statistics(file_paths[0], file_type_choice)
 
     # Ensure the directory exists
     output_dir = os.path.dirname(output_path)
