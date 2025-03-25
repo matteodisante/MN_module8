@@ -7,7 +7,6 @@ import logging
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '/utils/')))
 from utils.io_utils import load_data
 from utils.interface_utils import navigate_directories
-from utils.decorators import time_it
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../core/')))
 from core.mutual_information_1 import mutual_information_1
