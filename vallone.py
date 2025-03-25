@@ -106,19 +106,6 @@ def f_corr0(raw_data, n, h, max_lag):
             time_file = time.time() - start
             logging.info(f"Time to process {name} = {time_file} sec")
 
-def f2_plus(x, y):
-    data = np.column_stack((x, y))
-
-    k_inf = 6
-    k_sup = 50
-    k_arr = np.arange(k_inf, k_sup+1)
-
-    mi_supp = np.zeros(len(k_arr))
-
-    for l in range(len(k_arr)):
-        mi_supp[l] = np.maximum(mutual_information_1(data, k=k_arr[l]), 0)
-
-    return np.median(mi_supp)
 
 def f2(x, y, k):
     data = np.column_stack((x, y))
