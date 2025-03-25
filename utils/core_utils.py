@@ -64,6 +64,7 @@ def _kth_nearest_distance_numba(sorted_data, k):
     return kth_dists
 
 
+
 def kth_nearest_distance_1d(data: np.ndarray, k: int) -> np.ndarray:
     """
     Calcola la distanza al k-esimo nearest neighbor per ciascun punto di un array 1D,
@@ -105,9 +106,7 @@ def kth_nearest_distance_1d(data: np.ndarray, k: int) -> np.ndarray:
 
 
 
-
-
-def find_k_nearest_neighbors(matrix, k, workers=3):
+def find_k_nearest_neighbors(matrix, k, workers=2):
     """
     Finds the k-th nearest neighbor for each point in a dataset using the Chebyshev (max) metric,
     optimized for 2D using scipy.spatial.cKDTree, con supporto alla parallelizzazione (SciPy >= 1.9.0).
@@ -116,7 +115,7 @@ def find_k_nearest_neighbors(matrix, k, workers=3):
         matrix (2D array-like): Input data where each row is a point.
         k (int): Number of nearest neighbors to consider (excluding the point itself).
         workers (int, optional): Number of workers (threads) to use for parallel processing.
-                                 If -1 is given, all CPU threads are used. Default is -1.
+
 
     Returns:
         np.ndarray: 1D array containing the distance to the k-th nearest neighbor for each point.
@@ -127,56 +126,29 @@ def find_k_nearest_neighbors(matrix, k, workers=3):
         # p=np.inf indica la distanza Chebyshev
         # workers consente la parallelizzazione (disponibile da SciPy 1.9.0 in poi)
         distances, indices = tree.query(matrix, k=k+1, p=np.inf, workers=workers)
-        # Restituisce la distanza del k-esimo vicino (escludendo il self-neighbor)
         return distances[:, k]
     except Exception as e:
-        return None
+        raise ValueError(f'Error finding k-non distances in the joint space: {e}')
 
 
 
-
-
-
-def compute_marginal_counts(matrix, epsilon, tol: float = 1e-13) -> np.ndarray:
-    """
-    Computes the marginal counts for a single variable (1D) using a vectorized NumPy approach.
-    For each sample, counts how many points fall within the interval:
-        [x_i - (epsilon_i/2 - tol), x_i + (epsilon_i/2 - tol)]
-    (the sample itself is not counted).
+def compute_marginal_counts(matrix, epsilon, workers = 2):
+    data = np.asarray(matrix).flatten()
+    epsilon = np.asarray(epsilon).flatten()
     
-    Parameters:
-        matrix (1D array-like): Input data for a single variable. Should be of shape (n_samples,).
-        epsilon (1D array-like): Distance thresholds for each sample (same length as matrix).
-        tol (float): Tolerance to subtract from the radius (default 1e-12).
+    if data.shape[0] != epsilon.shape[0]:
+        raise ValueError("Le dimensioni di 'matrix' ed 'epsilon' devono coincidere.")
     
-    Returns:
-        np.ndarray: 1D array of marginal counts for each sample.
-    """
     try:
-        # Ensure that the input arrays are 1D
-        data = np.asarray(matrix).flatten()
-        epsilon = np.asarray(epsilon).flatten()
-        if data.shape[0] != epsilon.shape[0]:
-            raise ValueError("The dimensions of 'matrix' and 'epsilon' must match.")
-        
-        # Effective radius for each sample
+        tol = 10*np.finfo(np.float64).eps
         r = (epsilon / 2) - tol
+        # Costruisci l'albero KD
+        tree = cKDTree(data[:, None])  # KDTree richiede un input 2D
+        # Trova tutti i punti vicini per ogni punto in un'unica chiamata vettorizzata
+        n_points_array = tree.query_ball_point(data[:, None], r, return_length=True, workers = workers)
+        return n_points_array - 1
         
-        # Sort data for efficient interval search
-        sorted_data = np.sort(data)
-        
-        # Calculate the left and right bounds of the interval for each sample
-        left_bounds = data - r
-        right_bounds = data + r
-        
-        # Use np.searchsorted to find insertion indices in the sorted array.
-        left_indices = np.searchsorted(sorted_data, left_bounds, side='left')
-        right_indices = np.searchsorted(sorted_data, right_bounds, side='right')
-        
-        # The count is the difference in indices, subtracting 1 to exclude the sample itself.
-        counts = right_indices - left_indices - 1
-        
-        return counts
     except Exception as e:
         logger.error(f"Error computing marginal counts with numpy: {e}")
         return None
+
