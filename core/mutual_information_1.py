@@ -1,6 +1,5 @@
 import os
 import sys
-import time
 import numpy as np
 from joblib import Parallel, delayed
 from scipy.special import digamma
@@ -28,10 +27,7 @@ def mutual_information_1(dataset, k, n_jobs=2):
         raise ValueError("k deve essere maggiore di 0 e minore del numero di campioni.")
     
     # Step 1: Find k-nearest neighbors in the joint space
-    time_start = time.perf_counter()
     distances = find_k_nearest_neighbors(dataset, k, workers = 3)
-    time_end = time.perf_counter()
-    print(f'End of find_k_nearest_neighbors run in joint space. Run time = {time_end - time_start} s')
     if distances is None:
         raise ValueError("Error computing joint k-nearest neighbors.")
     epsilon = 2 * distances  # 2 * distance to the k-th nearest neighbor for each point
@@ -44,11 +40,8 @@ def mutual_information_1(dataset, k, n_jobs=2):
         marginal_data = dataset[:, var_idx].reshape(-1, 1)
         return np.maximum(0, compute_marginal_counts(marginal_data, epsilon, workers = 3))
         
-    time_start = time.perf_counter()
     results = Parallel(n_jobs=n_jobs)(delayed(compute_counts_for_variable)(i)  
     for i in range(n_variables))
-    time_end = time.perf_counter()
-    print(f'End of compute_counts_for_variable run in both marginal spaces. Run time = {time_end - time_start} s')
     marginal_counts = np.array(results)
     
     # Step 3: Compute the mutual information using Grassberger's formula
