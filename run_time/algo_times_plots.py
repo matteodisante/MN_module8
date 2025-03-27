@@ -1,144 +1,156 @@
 import os
 import sys
-import shutil
 import numpy as np
 import pandas as pd
 import logging
 import matplotlib.pyplot as plt
 
-# Add the path for the utility modules
+# Aggiungi il percorso per i moduli utility
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../utils/')))
 from interface_utils import navigate_directories, setup_logger
 from io_utils import extract_file_details, ensure_directory
 
+def calcola_pendenza(x, y, num_punti):
+    """Calcola la pendenza del fit lineare sui dati forniti."""
+    if len(x) >= num_punti:
+        log_x = np.log(x[-num_punti:])
+        log_y = np.log(y[-num_punti:])
+        pendenza, _ = np.polyfit(log_x, log_y, 1)
+        return pendenza
+    return np.nan
+
 if __name__ == '__main__':
     setup_logger(stdout_printing=True)
-    
-    logging.info("Select file containing central values of computation times for a given mi estimate")
+
+    logging.info("Seleziona il file contenente i valori centrali dei tempi di calcolo per una data stima di mi\n")
     central_value_file_path = navigate_directories(
-        start_path="../computation_times/",
+        start_path="../run_time/computation_times/",
         multi_select=False,
         file_extension=".txt"
     )[0]
-    
-    logging.info("Select file containing uncertainties for the same mi estimate")
+
+    logging.info("Seleziona il file contenente le incertezze per la stessa stima di mi\n")
     error_value_file_path = navigate_directories(
-        start_path="../computation_times/",
+        start_path="../run_time/computation_times/",
         multi_select=False,
         file_extension=".txt"
     )[0]
+
+    # Mappa dei nomi dei file ai tipi
+    file_name_map = {
+        "mi1.txt": "mi1",
+        "d_mi1.txt": "mi1",
+        "misum.txt": "misum",
+        "d_misum.txt": "misum",
+        "mi_binned.txt": "mi_binned",
+        "d_mibinned.txt": "mi_binned",
+    }
     
-    # Extract details from the file path (distribution name, params, size, file index)
+    central_file_name = os.path.basename(central_value_file_path)
+    error_file_name = os.path.basename(error_value_file_path)
+
+    # Determina il tipo di file (mi1, misum, mi_binned)
+    mi_type = file_name_map.get(central_file_name, "sconosciuto")
+
+    if mi_type == "sconosciuto":
+        logging.error("Tipo di file non riconosciuto. Uscita.")
+        sys.exit(1)
+
+    # Estrai dettagli dal percorso del file (nome distribuzione, parametri, dimensione, indice file)
     details = extract_file_details(central_value_file_path)
-    
-    # Read the files with times and uncertainties
-    # (Assuming the first column contains N and the subsequent columns represent different k values)
+
+    # Leggi i file con i tempi e le incertezze
     run_times_df = pd.read_csv(central_value_file_path, sep='\t', header=0)
     run_errors_df = pd.read_csv(error_value_file_path, sep='\t', header=0)
-    
-    # Extract the N values from the first column (each row corresponds to a fixed N)
+
+    # Estrai i valori di N dalla prima colonna
     N_values = run_times_df.iloc[:, 0].values
-    # Extract the k values from the headers (excluding the first column) and convert them to float
+    # Estrai i valori di k dagli header (escludendo la prima colonna)
     k_headers = run_times_df.columns[1:].astype(float)
-    
-    # Extract the matrices of times and uncertainties (excluding the first column)
+
+    # Estrai le matrici dei tempi e delle incertezze (escludendo la prima colonna)
     times_matrix = run_times_df.iloc[:, 1:].values
     errors_matrix = run_errors_df.iloc[:, 1:].values
-    
-    # Set up the directory to save the plots
+
+    # Imposta la directory per salvare i plot
     plots_dir = os.path.join("..", "plots", "time_estimates")
     if not ensure_directory(plots_dir):
-        sys.exit("Operation cancelled by the user.")
-    
+        sys.exit("Operazione annullata dall'utente.")
+
     ###############################################################
-    # First plot: Curves for fixed N (x = k/N)
+    # Primo plot: Curve per N fisso (x = k/N)
     ###############################################################
     plt.figure(figsize=(9, 6))
     plt.xscale('log')
     plt.yscale('log')
-    
-    # Loop through each row (each fixed N)
+
     for i, N in enumerate(N_values):
         row_times = times_matrix[i, :]
         row_errors = errors_matrix[i, :]
-        
-        # Filter valid points (time > 0)
+
         valid_mask = row_times > 0
         if not np.any(valid_mask):
             continue
-        
-        # Compute x = k/N for the valid points
+
         x_vals = k_headers[valid_mask] / N
         y_vals = row_times[valid_mask]
         y_errs = row_errors[valid_mask]
-        
-        # Estimate the slope using linear regression on the log-transformed data if there are at least two points
-        if len(x_vals) >= 2:
-            log_x = np.log(x_vals)
-            log_y = np.log(y_vals)
-            slope, intercept = np.polyfit(log_x, log_y, 1)
-        else:
-            slope = np.nan
-        
+
+        num_punti_fit = min(2, len(x_vals))
+        pendenza = calcola_pendenza(x_vals, y_vals, num_punti_fit)
+
         plt.errorbar(
             x_vals, y_vals, yerr=y_errs,
-            fmt='o-', capsize=5, label=f'N={int(N)} (slope={slope:.2f})'
+            fmt='.-', capsize=0, label=f'N={int(N)} (slope ultimi {num_punti_fit} pts={pendenza:.2f})'
         )
-    
-    plt.xlabel('k / N (log scale)')
-    plt.ylabel('Time (log scale)')
-    plt.title('Log-Log Plot of Time vs k/N for each fixed N')
+
+    plt.xlabel('k/N')
+    plt.ylabel('CPU time')
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
     plt.legend()
     plt.tight_layout()
-    
-    # Save the plot with a filename that includes the extracted details
-    plot_filename_N_fixed = f"{details['distribution_name']}_{details['params']}_{details['size']}_{details['file_index']}_N_fixed.png"
-    plt.savefig(os.path.join(plots_dir, plot_filename_N_fixed))
+
+    # Salva il primo plot con un nome file che include il tipo di MI
+    plot_filename_N_fixed = f"{mi_type}_{details['distribution_name']}_{details['params']}_{details['size']}_{details['file_index']}_N_fixed.pdf"
+    plt.savefig(os.path.join(plots_dir, plot_filename_N_fixed), bbox_inches='tight')
     plt.show()
-    
+
     ###############################################################
-    # Second plot: Curves for fixed k (x = k/N, with N varying)
+    # Secondo plot: Curve per k fisso (x = k/N, con N variabile)
     ###############################################################
     plt.figure(figsize=(9, 6))
     plt.xscale('log')
     plt.yscale('log')
-    
-    # Loop through each column (each fixed k)
+
     for j, k in enumerate(k_headers):
-        col_times = times_matrix[:, j]      # Times for this fixed k for every N
-        col_errors = errors_matrix[:, j]      # Corresponding uncertainties
-        # Compute x = k/N for each N
+        col_times = times_matrix[:, j]
+        col_errors = errors_matrix[:, j]
+
         x_vals = k / N_values
         valid_mask = col_times > 0
         if not np.any(valid_mask):
             continue
-        
+
         x_vals_valid = x_vals[valid_mask]
         y_vals_valid = col_times[valid_mask]
         y_errs_valid = col_errors[valid_mask]
-        
-        # Estimate the slope if there are at least two valid points
-        if len(x_vals_valid) >= 2:
-            log_x = np.log(x_vals_valid)
-            log_y = np.log(y_vals_valid)
-            slope, intercept = np.polyfit(log_x, log_y, 1)
-        else:
-            slope = np.nan
-        
+
+        num_punti_fit = 3 if k >= 100 else 2
+        pendenza = calcola_pendenza(x_vals_valid, y_vals_valid, num_punti_fit)
+
         plt.errorbar(
             x_vals_valid, y_vals_valid, yerr=y_errs_valid,
-            fmt='o-', capsize=5, label=f'k={k} (slope={slope:.2f})'
+            fmt='.-', capsize=0, label=f'k={int(k)} (slope primi {num_punti_fit} pts={pendenza:.2f})'
         )
-    
-    plt.xlabel('k / N (log scale)')
-    plt.ylabel('Time (log scale)')
-    plt.title('Log-Log Plot of Time vs k/N for each fixed k')
+
+    plt.xlabel('k/N')
+    plt.ylabel('CPU time')
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
     plt.legend()
     plt.tight_layout()
-    
-    # Save the second plot with a filename that includes the extracted details
-    plot_filename_k_fixed = f"{details['distribution_name']}_{details['params']}_{details['size']}_{details['file_index']}_k_fixed.png"
-    plt.savefig(os.path.join(plots_dir, plot_filename_k_fixed))
+
+    # Salva il secondo plot con un nome file che include il tipo di MI
+    plot_filename_k_fixed = f"{mi_type}_{details['distribution_name']}_{details['params']}_{details['size']}_{details['file_index']}_k_fixed.pdf"
+    plt.savefig(os.path.join(plots_dir, plot_filename_k_fixed), bbox_inches='tight')
     plt.show()
+    
