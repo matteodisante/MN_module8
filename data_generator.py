@@ -99,7 +99,7 @@ def generate_and_save_data(config, selected_distribution_name, selected_size=Non
             data = generate_function(params, size)
 
             # Save data to a TXT file without headers and with high precision
-            np.savetxt(output_file, data, fmt="%.15f")
+            np.savetxt(output_file, data, fmt="%.15e")
             print(f"File {file_num}/{num_files} generated and saved in: {output_file}")
 
 
