@@ -22,9 +22,9 @@ def independent_gaussian_rv(mu, sigma, size, rng):
 
     return combined_array_gauss
 
-def correlated_gaussian_rv(mu, sigma, corr, size):
+def correlated_gaussian_rv(mu, sigma, corr, size, rng):
 
-    combined_array_gauss = independent_gaussian_rv(mu, sigma, size)
+    combined_array_gauss = independent_gaussian_rv(mu, sigma, size, rng)
     correlated_array_gauss = correlate_data(combined_array_gauss, corr)
 
     return correlated_array_gauss

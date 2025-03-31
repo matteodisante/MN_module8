@@ -81,7 +81,7 @@ def generate_and_save_data(config, selected_distribution_name, selected_size=Non
         # Dictionary to map distributions to their respective generation functions
         distribution_functions = {
             "independent_gaussian_rv": lambda params, size: independent_gaussian_rv(params['mu'], params['sigma'], size, rng),
-            "correlated_gaussian_rv": lambda params, size: correlated_gaussian_rv(params['mu'], params['sigma'], distribution['correlation'], size),
+            "correlated_gaussian_rv": lambda params, size: correlated_gaussian_rv(params['mu'], params['sigma'], distribution['correlation'], size, rng),
             "independent_uniform_rv": lambda params, size: independent_uniform_rv(params['low'], params['high'], size, rng),
             "independent_exponential_rv": lambda params, size: independent_exponential_rv(params['lambda'], size, rng),
             "gamma_exponential": lambda params, size: gamma_exponential(params['theta'], size, rng),
