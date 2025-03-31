@@ -6,7 +6,7 @@ import shutil
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../utils/')))
 from interface_utils import navigate_directories
-from io_utils import load_data, save_data
+from io_utils import load_data
 
 
 def get_output_file_path_for_mean_statistics(original_file_path, file_type_choice):
@@ -154,21 +154,21 @@ if __name__ == '__main__':
             
     
     with open(output_path, "w") as f:
-        f.write(f"Mean Correlation: {mean_stats['mean_corr']:.5f} +- {mean_stats['std_mean_corr']:.5f}\n")
-        f.write(f"Mean Median X: {mean_stats['mean_median_x']:.5f}\n")
-        f.write(f"Mean Median Y: {mean_stats['mean_median_y']:.5f}\n")
-        f.write(f"Mean Mean X: {mean_stats['mean_mean_x']:.5f}\n")
-        f.write(f"Mean Mean Y: {mean_stats['mean_mean_y']:.5f}\n")
-        f.write(f"Mean Std X: {mean_stats['mean_std_x']:.5f}\n")
-        f.write(f"Mean Std Y: {mean_stats['mean_std_y']:.5f}\n")
-        f.write(f"Mean Min X: {mean_stats['mean_min_x']:.5f}\n")
-        f.write(f"Mean Min Y: {mean_stats['mean_min_y']:.5f}\n")
-        f.write(f"Mean Max X: {mean_stats['mean_max_x']:.5f}\n")
-        f.write(f"Mean Max Y: {mean_stats['mean_max_y']:.5f}\n")
-        f.write(f"Mean Percentile X (Lower): {mean_stats['mean_percentile_x_lower']:.5f}\n")
-        f.write(f"Mean Percentile X (Upper): {mean_stats['mean_percentile_x_upper']:.5f}\n")
-        f.write(f"Mean Percentile Y (Lower): {mean_stats['mean_percentile_y_lower']:.5f}\n")
-        f.write(f"Mean Percentile Y (Upper): {mean_stats['mean_percentile_y_upper']:.5f}\n")
+        f.write(f"Mean Correlation: {mean_stats['mean_corr']:.5f} +- {mean_stats['std_mean_corr']:.5e}\n")
+        f.write(f"Mean Median X: {mean_stats['mean_median_x']:.5e}\n")
+        f.write(f"Mean Median Y: {mean_stats['mean_median_y']:.5e}\n")
+        f.write(f"Mean Mean X: {mean_stats['mean_mean_x']:.5e}\n")
+        f.write(f"Mean Mean Y: {mean_stats['mean_mean_y']:.5e}\n")
+        f.write(f"Mean Std X: {mean_stats['mean_std_x']:.5e}\n")
+        f.write(f"Mean Std Y: {mean_stats['mean_std_y']:.5e}\n")
+        f.write(f"Mean Min X: {mean_stats['mean_min_x']:.5e}\n")
+        f.write(f"Mean Min Y: {mean_stats['mean_min_y']:.5e}\n")
+        f.write(f"Mean Max X: {mean_stats['mean_max_x']:.5e}\n")
+        f.write(f"Mean Max Y: {mean_stats['mean_max_y']:.5e}\n")
+        f.write(f"Mean Percentile X (Lower): {mean_stats['mean_percentile_x_lower']:.5e}\n")
+        f.write(f"Mean Percentile X (Upper): {mean_stats['mean_percentile_x_upper']:.5e}\n")
+        f.write(f"Mean Percentile Y (Lower): {mean_stats['mean_percentile_y_lower']:.5e}\n")
+        f.write(f"Mean Percentile Y (Upper): {mean_stats['mean_percentile_y_upper']:.5e}\n")
 
     logging.info(f"Results saved in {output_path}")
     print(f'Results saved in {output_path}')
