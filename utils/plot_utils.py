@@ -338,7 +338,7 @@ def format_plot(mi_estimate="", figure_choice="4", is_independent=False, N_value
         ylabel = (r"I$_{\mathrm{" + subscript + r"}}$/I$_{\mathrm{theoretical}}$")
     elif figure_choice=="8":
         ylabel = "Standard Deviation"
-    plt.ylabel(ylabel, fontsize=20)
+    plt.ylabel(ylabel, fontsize=30)
 
     if figure_choice in ["4"]: 
         plt.axhline(y=theoretical_mi, color='b', linestyle='-', linewidth=0.5, label=r"I$_{\mathrm{theoretical}}$:"+f"{np.abs(theoretical_mi):.3f}")
@@ -350,21 +350,21 @@ def format_plot(mi_estimate="", figure_choice="4", is_independent=False, N_value
     plt.xscale('log')
 
     if figure_choice=="4b":
-        plt.xlabel(r"Number of non-zero cells" if mi_estimate == "mi_binning" else "k", fontsize=20)
+        plt.xlabel(r"Number of non-zero cells" if mi_estimate == "mi_binning" else "k", fontsize=30)
     elif figure_choice in ["4", "4c"]: 
-        plt.xlabel(r"Number of non-zero cells/N" if mi_estimate == "mi_binning" else "k/N", fontsize=20)
+        plt.xlabel(r"Number of non-zero cells/N" if mi_estimate == "mi_binning" else "k/N", fontsize=30)
     elif figure_choice in ["20", "7", "9"]:
-        plt.xlabel(r"1/N", fontsize=20)
+        plt.xlabel(r"1/N", fontsize=30)
     elif figure_choice=="8":
-        plt.xlabel(r"N", fontsize=20)
+        plt.xlabel(r"N", fontsize=30)
     elif figure_choice=="21":
-        plt.xlabel(param_name_mapping, fontsize=20)
+        plt.xlabel(param_name_mapping, fontsize=30)
 
     plt.grid(True, linestyle='--', alpha=0.6)
-    plt.legend(fontsize=15, loc='best')
+    plt.legend(fontsize=25, loc='best')
 
-    plt.tick_params(axis='x', labelsize=20)
-    plt.tick_params(axis='y', labelsize=20)
+    plt.tick_params(axis='x', labelsize=30)
+    plt.tick_params(axis='y', labelsize=30)
     #from matplotlib.ticker import FormatStrFormatter
     #plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     #plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
