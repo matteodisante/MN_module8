@@ -104,8 +104,9 @@ if __name__ == '__main__':
             fmt='.-', capsize=0, label=f'N={int(N)} (slope ultimi {num_punti_fit} pts={pendenza:.2f})'
         )
 
-    plt.xlabel('k/N')
-    plt.ylabel('CPU time')
+    plt.xlabel('k/N',fontsize=16)
+    plt.ylabel('CPU time', fontsize=16)
+    plt.tick_params(axis='both', labelsize=14)
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
     plt.legend()
     plt.tight_layout()
@@ -135,7 +136,7 @@ if __name__ == '__main__':
         y_vals_valid = col_times[valid_mask]
         y_errs_valid = col_errors[valid_mask]
 
-        num_punti_fit = 3 if k >= 100 else 2
+        num_punti_fit = 4 if k >= 100 else 2
         pendenza = calcola_pendenza(x_vals_valid, y_vals_valid, num_punti_fit)
 
         plt.errorbar(
@@ -143,8 +144,9 @@ if __name__ == '__main__':
             fmt='.-', capsize=0, label=f'k={int(k)} (slope primi {num_punti_fit} pts={pendenza:.2f})'
         )
 
-    plt.xlabel('k/N')
-    plt.ylabel('CPU time')
+    plt.xlabel('k/N',fontsize=16)
+    plt.ylabel('CPU time', fontsize=16)
+    plt.tick_params(axis='both', labelsize=14)
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
     plt.legend()
     plt.tight_layout()
